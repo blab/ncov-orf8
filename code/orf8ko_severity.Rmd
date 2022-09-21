@@ -1,0 +1,196 @@
+---
+title: The relationship between SARS-CoV-2 ORF8 knockout and clinical severity in
+  Washington State
+author: "Cassia Wagner"
+date: "9/9/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+In this analysis, I explore the relationship between ORF8 knockout and clinical severity in COVID-19 cases in Washington State.
+Clinical data was graciously provided by the WA DOH.
+ORF8KO was defined as greater than 100 N's or 7+ gaps in ORF8. Or a translated protein length of less than 100 amino acids, which in WT virus is a 121 amino acid protein.
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(questionr)
+library(knitr)
+```
+```{r, echo=FALSE, warning=FALSE, message=FALSE, results=FALSE, show_col_types=FALSE}
+## Read in SARS2 ORF8 dataset
+ko <- read_tsv("washington.orf8ko.tsv")
+metadata <- read_tsv("data/2022-07-26.gisaid.washington.metadata.tsv")
+wdrs <- read_csv("../data/wdrs_metadata_9.2.22.csv")
+df <- metadata %>%
+  left_join(ko, by = "strain") %>%
+  inner_join(wdrs, by = c("strain" = "gisaid_id"))
+
+## Call ORF 8 KOs
+df <- df %>%
+  mutate(orf8ko = ifelse(gap > 6 | protein_length <= 100 | Ns > 100, "yes", "no"))
+
+## Create vaccinated variable
+df <- df %>%
+  mutate(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_1 = as_date(ifelse(difftime(date,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_1, units="days") < 14, NA, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_1))) %>%
+  mutate(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_2 = as_date(ifelse(difftime(date,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_2, units="days") < 14, NA, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_2))) %>%
+  mutate(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_3 = as_date(ifelse(difftime(date,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_3, units="days") < 14, NA, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_3))) %>%
+  mutate(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_4 = as_date(ifelse(difftime(date,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_4, units="days") < 14, NA, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_4))) %>%
+  mutate(last_vaccination = pmax(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_1,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_2, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_3, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_4, na.rm=TRUE)) %>%
+  mutate(days_since_vaccination = difftime(date, last_vaccination, units="days")) %>%
+  mutate(vaccinated = ifelse(is.na(days_since_vaccination), "no", "yes"))
+
+## Create died variable
+df <- df %>%
+  mutate(died = ifelse(is.na(death_date), "no", "yes"))
+
+## Variable cleaning
+df$hosp = fct_relevel(df$hosp, "No", "Yes")
+df$died = fct_relevel(df$died, "no", "yes")
+df$age_group = fct_relevel(df$age_group, "0-4", "5-17", "18-44", "45-64", "65-79", "80+", "Unknown")
+```
+## Regression
+I'm using a multivariable logistic regression to compare the impact of ORF8KO on two different clinical outcomes.
+First, I look at probability of hospitalization.
+Second, I look at the probability of death.
+
+The general logistic regression I'm performing takes the form:
+$$log(\frac{\pi_i}{1-\pi_i}) = \beta_0 + \beta_1 Orf8KO_i + \beta_2 AgeGroup_i + \beta_3 SexAtBirth_i + \beta_4 Vaccination_i$$
+
+## Hospitalization
+```{r,echo=FALSE,message=FALSE}
+df_hosp <- df %>%
+  filter(hosp != "Unknown") %>%
+  filter(age_group != "Unknown") %>%
+  filter(!is.na(age_group) & !is.na(hosp) & !is.na(orf8ko) & !is.na(sex_at_birth) & !is.na(vaccinated))
+df_hosp$age_group = as.numeric(df_hosp$age_group)
+```
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+reg1 <- glm(hosp ~ orf8ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp)
+or1 <- as.tibble(questionr::odds.ratio(reg1, level=(1-(0.05))), rownames = "Predictor")
+plot1 <- df_hosp %>%
+  ggplot(aes(orf8ko, color=hosp,fill=hosp)) +
+  geom_bar(position="fill",width=0.7) +
+  ylab("Proportion") +
+  xlab("ORF8KO") + 
+  scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
+  scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
+  theme_minimal() +
+  theme(text = element_text(size = 10)) 
+```
+```{r,echo=FALSE,fig.dim = c(3,2), out.width="50%", fig.align='center'}
+plot1
+kable(or1[2:6,], caption = "Odds Ratio of Hospitalization", align="lllll")
+```
+
+## Death
+```{r,echo=FALSE,message=FALSE}
+df_death<- df %>%
+  filter(age_group != "Unknown") %>%
+  filter(!is.na(age_group) & !is.na(died) & !is.na(orf8ko) & !is.na(sex_at_birth) & !is.na(vaccinated))
+df_death$age_group = as.numeric(df_death$age_group)
+```
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+reg2 <- glm(died ~ orf8ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_death)
+or2 <- as.tibble(questionr::odds.ratio(reg2, level=(1-(0.05))), rownames = "Predictor")
+plot2 <- df_death %>%
+  ggplot(aes(orf8ko, color=died,fill=died)) +
+  geom_bar(position="fill") +
+  ylab("Proportion") +
+  xlab("ORF8KO") + 
+  scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
+  scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
+  theme_minimal() +
+  theme(text = element_text(size = 10)) 
+```
+```{r,echo=FALSE,fig.dim = c(3,2), out.width="50%", fig.align='center'}
+plot2
+kable(or2[2:6,], caption = "Odds Ratio of Death", align="lllll")
+```
+
+## Decomposed by variant
+ORF8KO is not evenly distributed across variants. Therefore, it's possible that
+variant is a confounder for the correlation between ORF8KO and reduced risk of 
+hospitalization. To address this: I'll run the same analyses for each variant
+with at least 30 samples with an ORF8KO.
+
+```{r,echo=FALSE, message=FALSE}
+clades_30_hosp <- df_hosp %>%
+  group_by(Nextstrain_clade, orf8ko) %>%
+  summarise(number = n()) %>%
+  arrange(Nextstrain_clade) %>%
+  filter(number > 30) %>%
+  group_by(Nextstrain_clade) %>%
+  summarise(rows = n()) %>%
+  filter(rows > 1) %>%
+  pull(Nextstrain_clade)
+
+clades_30_death <- df_death %>%
+  group_by(Nextstrain_clade, orf8ko) %>%
+  summarise(number = n()) %>%
+  arrange(Nextstrain_clade) %>%
+  filter(number > 30) %>%
+  group_by(Nextstrain_clade) %>%
+  summarise(rows = n()) %>%
+  filter(rows > 1) %>%
+  pull(Nextstrain_clade)
+```
+```{r, echo=FALSE, message=FALSE,fig.dim = c(3,2), out.width="50%",warning=FALSE,results="asis", fig.align='center'}
+for (variant in clades_30_death){
+  cat(paste("##",variant,"\n","*Hospitalization:*\n"))
+  freq_tab_hosp <- df_hosp %>%
+    filter(Nextstrain_clade==variant) %>%
+    group_by(orf8ko) %>%
+    summarise(n_samples = n())
+  print(kable(freq_tab_hosp, caption = paste("Samples with hospitalization data in ", variant, ".")))
+  if (variant %in% clades_30_hosp){
+      reg_hosp <- glm(hosp ~ orf8ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp[df_hosp$Nextstrain_clade==variant,])
+      or_hosp <- as.tibble(questionr::odds.ratio(reg_hosp, level=(1-(0.05))), rownames = "Predictor")
+      plot_hosp <- df_hosp %>%
+        filter(Nextstrain_clade==variant) %>%
+        ggplot(aes(orf8ko, color=hosp,fill=hosp)) +
+        geom_bar(position="fill",width=0.7) +
+        ylab("Proportion") +
+        xlab("ORF8KO") + 
+        scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
+        scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
+        theme_minimal() +
+        theme(text = element_text(size = 10)) +
+        ggtitle(label=variant)
+      print(plot_hosp)
+      print(kable(or_hosp[2:6,], caption = paste("Odds Ratio of Hospitalization for ",variant,"."),align="lllll"))
+  }
+  cat(paste("*Death:*\n"))
+  freq_tab_death <- df_death %>%
+    filter(Nextstrain_clade==variant) %>%
+    group_by(orf8ko) %>%
+    summarise(n_samples = n())
+  print(kable(freq_tab_death, caption = paste("Samples with death data in ", variant, ".")))
+  reg_death <- glm(died ~ orf8ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_death[df_death$Nextstrain_clade==variant,])
+      or_death <- as.tibble(questionr::odds.ratio(reg_death, level=(1-(0.05))), rownames = "Predictor")
+      plot_death <- df_death %>%
+        filter(Nextstrain_clade==variant) %>%
+        ggplot(aes(orf8ko, color=died,fill=died)) +
+        geom_bar(position="fill",width=0.7) +
+        ylab("Proportion") +
+        xlab("ORF8KO") + 
+        scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
+        scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
+        theme_minimal() +
+        theme(text = element_text(size = 10)) +
+        ggtitle(label=variant)
+      print(plot_death)
+      print(kable(or_death[2:6,], caption = paste("Odds Ratio of dying for ",variant,"."),align="lllll"))
+}
+```
+## Conclusion
+When broken down by variant, Orf8KO is not correlated with clinical severity in
+all but one variant. In Gamma, Orf8KO is correlated with an increased risk of
+hospitalization. There is not an increased risk of death. 
+
+Overall, Orf8KO does not seem to be associated with changes in clinical severity
+in Washington State.

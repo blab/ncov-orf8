@@ -41,7 +41,8 @@ df <- metadata %>%
 
 ## Call ORF 8 KOs
 df <- df %>%
-  mutate(orf8ko = ifelse(gap > 6 | protein_length <= 100 | Ns > 100, "yes", "no"))
+  mutate(orf8ko = ifelse(gap > 6 | protein_length <= 100 | Ns > 100, "yes", "no")) %>%
+  mutate(Nextstrain_clade = as_factor(Nextstrain_clade))
 
 ## Plot distribution of potential predictors by orf8ko
 # Sex at birth
@@ -234,4 +235,108 @@ for (variant in clades_30_death) {
   print(variant)
   print(or)
 }
+
+
+## Broken up by groups: Delta, Omicron, Gamma & 20A|20B|20C|20D|20G
+group = list("Delta", "Omicron", "Gamma")
+
+
+for (variant in group){
+  cat(paste("##",variant,"\n","*Hospitalization:*\n"))
+  freq_tab_hosp <- df_hosp %>%
+    filter(variant %in% Nextstrain_clade) %>%
+    group_by(orf8ko) %>%
+    summarise(n_samples = n())
+  print(kable(freq_tab_hosp, caption = paste("Samples with hospitalization data in ", variant, ".")))
+  if (variant %in% clades_30_hosp){
+    reg_hosp <- glm(hosp ~ orf8ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp[variant %in% df_hosp$Nextstrain_clade,])
+    or_hosp <- as.tibble(questionr::odds.ratio(reg_hosp, level=(1-(0.05))), rownames = "Predictor")
+    plot_hosp <- df_hosp %>%
+      filter(variant %in% Nextstrain_clade) %>%
+      ggplot(aes(orf8ko, color=hosp,fill=hosp)) +
+      geom_bar(position="fill",width=0.7) +
+      ylab("Proportion") +
+      xlab("ORF8KO") + 
+      scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
+      scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
+      theme_minimal() +
+      theme(text = element_text(size = 10)) +
+      ggtitle(label=variant)
+    print(plot_hosp)
+    print(kable(or_hosp[2:6,], caption = paste("Odds Ratio of Hospitalization for ",variant,"."),align="lllll"))
+  }
+  cat(paste("*Death:*\n"))
+  freq_tab_death <- df_death %>%
+    filter(variant %in% Nextstrain_clade) %>%
+    group_by(orf8ko) %>%
+    summarise(n_samples = n())
+  print(kable(freq_tab_death, caption = paste("Samples with death data in ", variant, ".")))
+  reg_death <- glm(died ~ orf8ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_death[variant %in% df_hosp$Nextstrain_clade,])
+  or_death <- as.tibble(questionr::odds.ratio(reg_death, level=(1-(0.05))), rownames = "Predictor")
+  plot_death <- df_death %>%
+    filter(variant %in% df_hosp$Nextstrain_clade) %>%
+    ggplot(aes(orf8ko, color=died,fill=died)) +
+    geom_bar(position="fill",width=0.7) +
+    ylab("Proportion") +
+    xlab("ORF8KO") + 
+    scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
+    scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
+    theme_minimal() +
+    theme(text = element_text(size = 10)) +
+    ggtitle(label=variant)
+  print(plot_death)
+  print(kable(or_death[2:6,], caption = paste("Odds Ratio of dying for ",variant,"."),align="lllll"))
+}
+
+## Non-voc virus
+cat("##Non-VOC viruses\n*Hospitalization:*\n")
+freq_tab_hosp <- df_hosp %>%
+  filter(Nextstrain_clade == "20A" | Nextstrain_clade=="20B"|Nextstrain_clade=="20C"|Nextstrain_clade=="20D"|Nextstrain_clade=="20G") %>%
+  group_by(orf8ko) %>%
+  summarise(n_samples = n())
+print(kable(freq_tab_hosp, caption = "Non-VOC samples with hospitalization data."))
+if (freq_tab_hosp[freq_tab_hosp$orf8ko=="yes",2]>30){
+  reg_hosp <- glm(hosp ~ orf8ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp[df_hosp$Nextstrain_clade == "20A" | df_hosp$Nextstrain_clade=="20B"|df_hosp$Nextstrain_clade=="20C"|df_hosp$Nextstrain_clade=="20D"|df_hosp$Nextstrain_clade=="20G",])
+  or_hosp <- as.tibble(questionr::odds.ratio(reg_hosp, level=(1-(0.05))), rownames = "Predictor")
+  plot_hosp <- df_hosp %>%
+    filter(Nextstrain_clade == "20A" | Nextstrain_clade=="20B"|Nextstrain_clade=="20C"|Nextstrain_clade=="20D"|Nextstrain_clade=="20G") %>%
+    ggplot(aes(orf8ko, color=hosp,fill=hosp)) +
+    geom_bar(position="fill",width=0.7) +
+    ylab("Proportion") +
+    xlab("ORF8KO") + 
+    scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
+    scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
+    theme_minimal() +
+    theme(text = element_text(size = 10)) +
+    ggtitle(label="Non-VOC viruses")
+  print(plot_hosp)
+  print(kable(or_hosp[2:6,], caption = "Odds Ratio of Hospitalization for Non-VOC viruses.",align="lllll"))
+}
+cat(paste("*Death:*\n"))
+freq_tab_death <- df_death %>%
+  filter(Nextstrain_clade == "20A" | Nextstrain_clade=="20B"|Nextstrain_clade=="20C"|Nextstrain_clade=="20D"|Nextstrain_clade=="20G") %>%
+  group_by(orf8ko) %>%
+  summarise(n_samples = n())
+print(kable(freq_tab_death, caption = "Non-VOC samples with death data."))
+reg_death <- glm(died ~ orf8ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_death[df_death$Nextstrain_clade == "20A" | df_death$Nextstrain_clade=="20B"|df_death$Nextstrain_clade=="20C"|df_death$Nextstrain_clade=="20D"|df_death$Nextstrain_clade=="20G",])
+or_death <- as.tibble(questionr::odds.ratio(reg_death, level=(1-(0.05))), rownames = "Predictor")
+plot_death <- df_death %>%
+  filter(Nextstrain_clade == "20A" | Nextstrain_clade=="20B"|Nextstrain_clade=="20C"|Nextstrain_clade=="20D"|Nextstrain_clade=="20G") %>%
+  ggplot(aes(orf8ko, color=died,fill=died)) +
+  geom_bar(position="fill",width=0.7) +
+  ylab("Proportion") +
+  xlab("ORF8KO") + 
+  scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
+  scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
+  theme_minimal() +
+  theme(text = element_text(size = 10)) +
+  ggtitle(label="Non-VOC viruses")
+print(plot_death)
+print(kable(or_death[2:6,], caption = "Odds Ratio of dying for Non-VOC viruses.",align="lllll"))
+summary(reg_death)
+
+reg_death_novax <- glm(died ~ orf8ko + age_group + sex_at_birth, family = "binomial", data = df_death[df_death$Nextstrain_clade == "20A" | df_death$Nextstrain_clade=="20B"|df_death$Nextstrain_clade=="20C"|df_death$Nextstrain_clade=="20D"|df_death$Nextstrain_clade=="20G",])
+or_death_novax <- as.tibble(questionr::odds.ratio(reg_death_novax, level=(1-(0.05))), rownames = "Predictor")
+kable(or_death_novax[2:5,], caption = "Odds Ratio of dying for Non-VOC viruses without vaccination status.",align="lllll")
+summary(reg_death_novax)
 

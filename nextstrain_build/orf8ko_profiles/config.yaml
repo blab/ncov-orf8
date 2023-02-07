@@ -1,0 +1,13 @@
+
+configfile:
+  - orf8ko_profiles/orf8ko_builds.yaml
+  - defaults/parameters.yaml
+
+cores: 8
+keep-going: False
+printshellcmds: True
+show-failed-logs: True
+restart-times: 2
+reason: True
+stats: stats.json
+set-threads: tree=4

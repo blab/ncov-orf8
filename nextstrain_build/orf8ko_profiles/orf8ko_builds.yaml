@@ -1,0 +1,109 @@
+# Defines input data
+inputs:
+  - name: deletions
+    metadata: "data/washington_deletions.tsv"
+    aligned: "data/washington_deletions.aligned.fasta.xz"
+    skip_sanitize_metadata: true
+  - name: gisaid
+    metadata: s3://nextstrain-ncov-private/metadata.tsv.gz
+    aligned: s3://nextstrain-ncov-private/aligned.fasta.xz
+    skip_sanitize_metadata: true
+
+# Defines next align specs
+genes: ["ORF1a", "ORF1b", "S", "ORF3a", "E", "M", "ORF6", "ORF7a", "ORF7b", "ORF8", "N", "ORF9b"]
+use_nextalign: true
+
+builds:
+  10k_orf8ko:
+    subsampling_scheme: 10k_deletions
+    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 10k build
+    region: North America
+    country: USA
+    division: Washington
+    latest_date: 2022-07-31
+
+  20k_orf8ko:
+    subsampling_scheme: 20k_deletions
+    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 20k build
+    country: USA
+    division: Washington
+    latest_date: 2022-07-31
+
+  50k_orf8ko:
+    subsampling_scheme: 50k_deletions
+    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 50k build
+    country: USA
+    division: Washington
+    latest_date: 2022-07-31
+
+# Define custom subsampling logic for county-level builds.
+subsampling:
+  10k_deletions:
+    focal:
+      group_by: "year month"
+      max_sequences: 3000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko == 'Yes')"
+    division:
+      group_by: "location year month"
+      max_sequences: 3000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko != 'Yes')"
+    country:
+      group_by: "division year month"
+      max_sequences: 1500
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division != '{division}')"
+    global:
+      group_by: "country year month"
+      max_sequences: 1500
+      max_date: --max-date {latest_date}
+      query: --query "(country != '{country}')"
+
+  20k_deletions:
+    focal:
+      group_by: "year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko == 'Yes')"
+    division:
+      group_by: "location year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko != 'Yes')"
+    country:
+      group_by: "division year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division != '{division}')"
+    global:
+      group_by: "country year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country != '{country}')"
+
+  50k_deletions:
+    focal:
+      group_by: "year month"
+      max_sequences: 15000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko == 'Yes')"
+    division:
+      group_by: "location year month"
+      max_sequences: 15000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko != 'Yes')"
+    country:
+      group_by: "division year month"
+      max_sequences: 7500
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division != '{division}')"
+    global:
+      group_by: "country year month"
+      max_sequences: 7500
+      max_date: --max-date {latest_date}
+      query: --query "(country != '{country}')"
+
+files:
+  description: "orf8ko_profiles/description.md"
+  auspice_config: "orf8ko_profiles/auspice_orf8ko.json"

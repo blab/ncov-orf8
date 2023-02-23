@@ -1,6 +1,6 @@
 '''
 This script takes a .fasta alignment and finds genes with either deletions or truncations.
-It defaults to look for knockouts in SARS-CoV-2 ORF8 according to alignment to 
+It defaults to look for knockouts in SARS-CoV-2 ORF8 according to alignment to
 [SARS2 ref sequence](https://github.com/nextstrain/ncov/blob/master/defaults/reference_seq.gb).
 
 Must provide alignment file, --align, and output file, --output. If want to look
@@ -11,6 +11,7 @@ import argparse
 from Bio import SeqIO
 from Bio.Seq import Seq
 import pandas as pd
+import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -40,5 +41,10 @@ if __name__ == '__main__':
         protein_lengths.append(len(protein))
 
     df = pd.DataFrame({'strain': ids, 'Ns': ns, 'gap': gaps, 'protein_length': protein_lengths})
+
+    df['orf8ko'] = np.where(df.Ns > 100, "Yes", "")
+    df['orf8ko'] = np.where(df.protein_length < 100, "Yes",df['orf8ko'])
+    df['orf8ko'] = np.where(df.gap >= 7, "Yes", df['orf8ko'])
+    df['orf8ko'] = np.where(df.orf8ko == "", "No", df['orf8ko'])
 
     df.to_csv(args.output, sep = '\t', index=False)

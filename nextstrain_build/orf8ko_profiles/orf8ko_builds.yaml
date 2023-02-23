@@ -1,11 +1,11 @@
+# Merge deletion info into metadata.
+custom_rules:
+     - orf8ko_profiles/extra_rules.smk
+
 # Defines input data
 inputs:
-  - name: deletions
-    metadata: "data/washington_deletions.tsv"
-    aligned: "data/washington_deletions.aligned.fasta.xz"
-    skip_sanitize_metadata: true
   - name: gisaid
-    metadata: s3://nextstrain-ncov-private/metadata.tsv.gz
+    metadata: "data/gisaid_deletions.tsv.gz"
     aligned: s3://nextstrain-ncov-private/aligned.fasta.xz
     skip_sanitize_metadata: true
 
@@ -13,25 +13,37 @@ inputs:
 genes: ["ORF1a", "ORF1b", "S", "ORF3a", "E", "M", "ORF6", "ORF7a", "ORF7b", "ORF8", "N", "ORF9b"]
 use_nextalign: true
 
+# Filter settings
+#filter:
+  # Tolerate 500 bp shorter genomes than typical.
+#  min_length: 26500
+
 builds:
-  10k_orf8ko:
-    subsampling_scheme: 10k_deletions
-    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 10k build
-    region: North America
-    country: USA
-    division: Washington
-    latest_date: 2022-07-31
+#  orf8ko_10k:
+#    subsampling_scheme: 10k_deletions
+#    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 10k build
+#    region: North America
+#    country: USA
+#    division: Washington
+#    latest_date: 2022-07-31
 
-  20k_orf8ko:
-    subsampling_scheme: 20k_deletions
-    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 20k build
-    country: USA
-    division: Washington
-    latest_date: 2022-07-31
+#  orf8ko_20k:
+#    subsampling_scheme: 20k_deletions
+#    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 20k build
+#    country: USA
+#    division: Washington
+#    latest_date: 2022-07-31
 
-  50k_orf8ko:
-    subsampling_scheme: 50k_deletions
-    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 50k build
+#  orf8ko_42k:
+#    subsampling_scheme: 50k_deletions
+#    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, 50k build
+#    country: USA
+#    division: Washington
+#    latest_date: 2022-07-31
+
+  orf8ko_noAlpha:
+    subsampling_scheme: noAlpha
+    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, no Alpha
     country: USA
     division: Washington
     latest_date: 2022-07-31
@@ -82,25 +94,43 @@ subsampling:
       max_date: --max-date {latest_date}
       query: --query "(country != '{country}')"
 
+  noAlpha:
+    focal:
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko == 'Yes') & (Nextstrain_clade != '20I (Alpha, V1)')"
+    division:
+      group_by: "location year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko != 'Yes') & (Nextstrain_clade != '20I (Alpha, V1)')"
+    country:
+      group_by: "division year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division != '{division}' & (Nextstrain_clade != '20I (Alpha, V1)'))"
+    global:
+      group_by: "country year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country != '{country}' & (Nextstrain_clade != '20I (Alpha, V1)'))"
+
   50k_deletions:
     focal:
-      group_by: "year month"
-      max_sequences: 15000
       max_date: --max-date {latest_date}
       query: --query "(country == '{country}') & (division == '{division}') & (orf8ko == 'Yes')"
     division:
       group_by: "location year month"
-      max_sequences: 15000
+      max_sequences: 14000
       max_date: --max-date {latest_date}
       query: --query "(country == '{country}') & (division == '{division}') & (orf8ko != 'Yes')"
     country:
       group_by: "division year month"
-      max_sequences: 7500
+      max_sequences: 7000
       max_date: --max-date {latest_date}
       query: --query "(country == '{country}') & (division != '{division}')"
     global:
       group_by: "country year month"
-      max_sequences: 7500
+      max_sequences: 7000
       max_date: --max-date {latest_date}
       query: --query "(country != '{country}')"
 

@@ -17,17 +17,17 @@
     {
       "key": "Ns",
       "title": "Ns in ORFf8",
-      "type": "continous"
+      "type": "continuous"
     },
     {
-      "key": "gapped",
+      "key": "gap",
       "title": "Gapped bases in ORF8",
-      "type": "continous"
+      "type": "continuous"
     },
     {
       "key": "protein_length",
       "title": "Amino acids encoded by ORF8",
-      "type": "continous"
+      "type": "continuous"
     },
     {
       "key": "pango_lineage",

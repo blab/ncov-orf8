@@ -171,6 +171,68 @@ def getClustersStops(states,subtree):
                         count += 1
     return clusters
 
+def getNodeFinch(subtree,meta,gene,states,leafs):
+    for clade in subtree.find_clades():
+        if clade in leafs:
+            if meta.loc[meta.strain==clade.name][gene+'_koType'].values[0] == 'earlyStop':
+                states[clade.name] = [meta.loc[meta.strain==clade.name,gene+'_misStops'].values[0]]
+            else:
+                states[clade.name] = ['None']
+            return states[clade.name]
+        else:
+            childStates = []
+            for child in clade:
+                childStops  = set(getNodeFinch(child,meta,gene,states,leafs))
+                childStates.append(childStops)
+
+            intersect = set.intersection(*childStates)
+            if not len(intersect):
+                union = set.union(*childStates)
+                nodeState = union
+            else:
+                nodeState = intersect
+            states[clade.name] = list(nodeState)
+            return list(nodeState)
+
+def getClusterLeafs(value,states,subtree,named):
+    for child in subtree.find_clades():
+        if child in subtree:
+            childState = states[child.name]
+            if value in childState:
+                if child in leafs:
+                    named.append(child.name)
+                else:
+                    getClusterLeafs(value,states,child,named)
+
+
+def getClustersFinch(states,subtree):
+    clusters = {}
+    count = 1
+    for clade in subtree.find_clades():
+        if clade not in leafs:
+            state = states[clade.name]
+            for i in state:
+                if i != 'None':
+                    clusters[count] = {}
+                    clusters[count]['strains'] = []
+                    clusters[count]['mut'] = i
+                    getClusterLeafs(i,states,clade,clusters[count]['strains'])
+                    count += 1
+    return clusters
+
+def trimClusters(clusters):
+    clustered = set()
+    rid = []
+    for k,v in clusters.items():
+        values = set(v['strains'])
+        if values.issubset(clustered):
+            rid.append(k)
+        else:
+            clustered.update(values)
+    for k in rid:
+        clusters.pop(k)
+    return clusters
+
 def saveClusters(stopC, delC,path,gene):
     clusts = []
     strains = []
@@ -235,10 +297,13 @@ if __name__ == '__main__':
 
         # call all early stops across internal nodes
         stops = {}
-        getNodeStops(tree,meta,gene,stops,leafs)
+        #getNodeStops(tree,meta,gene,stops,leafs)
+        getNodeFinch(tree,meta,gene,stops,leafs)
 
         # call stop clusters
-        stopClusters = getClustersStops(stops,tree)
+        #stopClusters = getClustersStops(stops,tree)
+        stopClusters = getClustersFinch(stops,tree)
+        trimClusters(stopClusters)
 
         # combine and write out
         outpath = args.outdir + 'clusters_' + gene + '.tsv'

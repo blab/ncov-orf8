@@ -22,7 +22,7 @@ rule add_metadata:
         deletions = "data/washington_deletions.tsv"
     params:
         key = "strain",
-        append = "Ns,gap,protein_length,orf8ko"
+        add = "Ns,gap,protein_length,orf8ko"
     output:
         combined = "data/gisaid_deletions.tsv.gz"
     shell:
@@ -30,7 +30,7 @@ rule add_metadata:
         gunzip -d -c {input.metadata} | tsv-join \
         --filter-file {input.deletions} \
          --key-fields {params.key} \
-         --append-fields {params.append} \
+         --append-fields {params.add} \
          -H \
          --write-all ''\
          | gzip > {output.combined}

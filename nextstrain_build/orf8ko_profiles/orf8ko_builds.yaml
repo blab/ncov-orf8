@@ -18,6 +18,13 @@ use_nextalign: true
   # Tolerate 500 bp shorter genomes than typical.
 #  min_length: 26500
 
+refine:
+  keep_polytomies: True
+
+traits:
+  default:
+    columns: ["country", "inWA"]
+
 builds:
 #  orf8ko_10k:
 #    subsampling_scheme: 10k_deletions
@@ -41,9 +48,16 @@ builds:
 #    division: Washington
 #    latest_date: 2022-07-31
 
-  orf8ko_noAlpha:
-    subsampling_scheme: noAlpha
-    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, no Alpha
+#  orf8ko_noAlpha:
+#    subsampling_scheme: noAlpha
+#    title: Genomic epidemiology of SARS-CoV-2 Orf8KO in Washington, no Alpha
+#    country: USA
+#    division: Washington
+#    latest_date: 2022-07-31
+
+  WA_20k:
+    subsampling_scheme: 20k_wa
+    title: Genomic epidemiology of SARS-CoV-2 in Washington
     country: USA
     division: Washington
     latest_date: 2022-07-31
@@ -72,17 +86,12 @@ subsampling:
       max_date: --max-date {latest_date}
       query: --query "(country != '{country}')"
 
-  20k_deletions:
+  20k_wa:
     focal:
       group_by: "year month"
-      max_sequences: 5000
+      max_sequences: 10000
       max_date: --max-date {latest_date}
-      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko == 'Yes')"
-    division:
-      group_by: "location year month"
-      max_sequences: 5000
-      max_date: --max-date {latest_date}
-      query: --query "(country == '{country}') & (division == '{division}') & (orf8ko != 'Yes')"
+      query: --query "(country == '{country}') & (division == '{division}')"
     country:
       group_by: "division year month"
       max_sequences: 5000

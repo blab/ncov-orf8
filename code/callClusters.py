@@ -126,6 +126,8 @@ def getClustersDels(states,subtree):
                                 named = [leaf.name for leaf in terms]
                                 clusters[count]['strains'].extend(named)
                                 clusters[count]['deletion'] = str(start)+':'+str(end)
+                depths = [len(clade.trace(clade,child)) for child in clusters[count]['strains']]
+                clusters[count]['maxDepth'] = max(depths)
                 count += 1
     return clusters
 
@@ -217,6 +219,8 @@ def getClustersFinch(states,subtree):
                     clusters[count]['strains'] = []
                     clusters[count]['mut'] = i
                     getClusterLeafs(i,states,clade,clusters[count]['strains'])
+                    depths = [len(clade.trace(clade,child)) for child in clusters[count]['strains']]
+                    clusters[count]['maxDepth'] = max(depths)
                     count += 1
     return clusters
 
@@ -238,13 +242,16 @@ def saveClusters(stopC, delC,path,gene):
     strains = []
     muts = []
     dels = []
+    depths = []
     kotype = []
     for i,k in enumerate(stopC.keys()):
         samples = stopC[k]['strains']
         mut = stopC[k]['mut']
+        depth = stopC[k]['maxDepth']
         length = len(samples)
         muts.extend([mut]*length)
         dels.extend(['None']*length)
+        depths.extend([depth]*length)
         strains.extend(samples)
         clusts.extend([i+1]*length)
         kotype.extend(['earlyStop']*length)
@@ -252,13 +259,15 @@ def saveClusters(stopC, delC,path,gene):
     for j,l in enumerate(delC.keys()):
         samples = delC[l]['strains']
         delet = delC[l]['deletion']
+        depth = delC[l]['maxDepth']
         length = len(samples)
         dels.extend([delet]*length)
         muts.extend(['None']*length)
+        depths.extend([depth]*length)
         strains.extend(samples)
         clusts.extend([maxClust+j+1]*length)
         kotype.extend(['bigDeletion']*length)
-    df = pd.DataFrame({'strain':strains,'cluster':clusts,gene+'_misStops':muts,gene+'_deletions':dels,gene+'_koType':kotype})
+    df = pd.DataFrame({'strain':strains,'cluster':clusts,'depth':depths,gene+'_misStops':muts,gene+'_deletions':dels,gene+'_koType':kotype})
     with open(path, 'w') as f:
         df.to_csv(f,sep='\t',index=False)
 
@@ -294,6 +303,7 @@ if __name__ == '__main__':
 
         # Call deletion clusters
         delClusters = getClustersDels(dels,tree)
+        trimClusters(delClusters)
 
         # call all early stops across internal nodes
         stops = {}

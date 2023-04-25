@@ -129,10 +129,15 @@
       "type": "continuous"
     },
     {
+      "key": "inWA",
+      "title": "Washington",
+      "type": "categorical"
+    },
+    {
       "key": "rare_mutations",
       "title": "Rare mutations",
       "type": "continuous"
-    }
+    },
   ],
   "geo_resolutions": [
     "location",

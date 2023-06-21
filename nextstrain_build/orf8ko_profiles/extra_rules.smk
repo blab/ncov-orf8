@@ -1,4 +1,6 @@
 ruleorder: filter_replace > filter
+ruleorder: annotate_metadata > annotate_metadata_with_index
+ruleorder: export_replace > export
 
 rule download_metadata_s3:
     message: "Downloading metadata from {params.address} -> {output.metadata}"
@@ -19,10 +21,11 @@ rule add_metadata:
     input:
         metadata = rules.download_metadata_s3.output,
         #deletions = "data/washington_deletions_dedup.tsv"
-        deletions = "data/washington_deletions.tsv"
+        #deletions = "data/washington_deletions.tsv"
+        deletions = "data/gisaid.washington_ko.tsv"
     params:
         key = "strain",
-        add = "Ns,gap,protein_length,orf8ko"
+        add = "ORF8_ko"
     output:
         combined = "data/gisaid_deletions.tsv.gz"
     shell:
@@ -36,6 +39,25 @@ rule add_metadata:
          | gzip > {output.combined}
         """
 
+rule annotate_metadata:
+    input:
+        metadata="results/{build_name}/metadata_with_nextclade_qc.tsv",
+        sequence_index = "results/{build_name}/sequence_index.tsv",
+    output:
+        metadata="results/{build_name}/metadata_with_index.tsv",
+    log:
+        "logs/annotate_metadata_with_index_{build_name}.txt",
+    benchmark:
+        "benchmarks/annotate_metadata_with_index_{build_name}.txt",
+    conda: config["conda_environment"]
+    shell:
+        """
+        python3 orf8ko_profiles/annotate_metadata_with_index_add_WA.py \
+            --metadata {input.metadata} \
+            --sequence-index {input.sequence_index} \
+            --output {output.metadata}
+        """
+
 rule include:
     message:
         """
@@ -47,7 +69,7 @@ rule include:
         include = "results/{build_name}/include.txt"
     shell:
         """
-        tsv-filter -H --str-eq orf8ko:Yes {input.metadata} | cut -f 1 | sed -n '1!p' > {output.include}
+        tsv-filter -H --str-eq ORF8_ko:Yes --ge coverage:0.95 {input.metadata} | cut -f 1 | sed -n '1!p' > {output.include}
         """
 
 rule filter_replace:
@@ -95,4 +117,115 @@ rule filter_replace:
             --exclude-where {params.exclude_where}\
             --output {output.sequences} \
             --output-log {output.filter_log} 2>&1 | tee {log};
+        """
+
+rule find_ko:
+    message:
+        """
+        Calling KO's for SARS-CoV-2 genes
+        """
+    input:
+        align = "results/{build_name}/filtered.fasta"
+    params:
+        reference = "defaults/reference_seq.gb"
+    output:
+        ko = "results/{build_name}/ko.tsv"
+    shell:
+        """
+        python orf8ko_profiles/find_ko.py \
+            --align {input.align} \
+            --ref {params.reference} \
+            --output {output.ko}
+        """
+
+rule call_clusters:
+    message:
+        """
+        Calling clusters for each gene
+        """
+    input:
+        tree = "results/{build_name}/tree.nwk",
+        ko = "results/{build_name}/ko.tsv"
+    output:
+        dir = directory("results/{build_name}/clusters/"),
+	orf8 = "results/{build_name}/clusters/clusters_ORF8.tsv"
+    shell:
+        """
+        python orf8ko_profiles/callClusters.py \
+            --tree {input.tree} \
+            --ko {input.ko} \
+            --outdir {output.dir}
+        """
+
+rule add_orf8ko_clusters:
+    message:
+        """
+        Appending orf8 KO clusters
+        """
+    input:
+        metadata = "results/{build_name}/metadata_adjusted.tsv.xz",
+        clusters = "results/{build_name}/clusters/clusters_ORF8.tsv",
+        ko = "results/{build_name}/ko.tsv"
+    params:
+        key = "strain",
+        add_clusters = "cluster,depth,ORF8_misStops,ORF8_deletions,ORF8_koType",
+        add_ko = "ORF8_ko",
+        #clusters = "results/{build_name}/clusters/clusters_ORF8.tsv"
+    output:
+        combined = "results/{build_name}/metadata_adjusted_added.tsv.xz"
+    shell:
+        """
+        xz -d -c {input.metadata} | tsv-join \
+         --filter-file {input.clusters} \
+         --key-fields {params.key} \
+         --append-fields {params.add_clusters} \
+         -H \
+         --write-all ''\
+         | tsv-join \
+         --filter-file {input.ko} \
+          --key-fields {params.key} \
+          --append-fields {params.add_ko} \
+          --prefix complete \
+          -H \
+          --write-all ''\
+          | xz -c -z > {output.combined}
+        """
+
+rule export_replace:
+    message: "Exporting data files for Auspice"
+    input:
+        tree = rules.refine.output.tree,
+        metadata = "results/{build_name}/metadata_adjusted_added.tsv.xz",
+        node_data = _get_node_data_by_wildcards,
+        auspice_config = get_auspice_config,
+        colors = lambda w: config["builds"][w.build_name]["colors"] if "colors" in config["builds"].get(w.build_name, {}) else ( config["files"]["colors"] if "colors" in config["files"] else rules.colors.output.colors.format(**w) ),
+        lat_longs = config["files"]["lat_longs"],
+        description = rules.build_description.output.description
+    output:
+        auspice_json = "results/{build_name}/ncov_with_accessions.json",
+        root_sequence_json = "results/{build_name}/ncov_with_accessions_root-sequence.json"
+    log:
+        "logs/export_{build_name}.txt"
+    benchmark:
+        "benchmarks/export_{build_name}.txt"
+    params:
+        title = export_title
+    resources:
+        # Memory use scales primarily with the size of the metadata file.
+        mem_mb=12000
+    conda: config["conda_environment"]
+    shell:
+        """
+        augur export v2 \
+            --tree {input.tree} \
+            --metadata {input.metadata} \
+            --node-data {input.node_data} \
+            --auspice-config {input.auspice_config} \
+            --include-root-sequence \
+            --colors {input.colors} \
+            --lat-longs {input.lat_longs} \
+            --title {params.title:q} \
+            --description {input.description} \
+            --minify-json \
+            --output {output.auspice_json} 2>&1 | tee {log}
         """

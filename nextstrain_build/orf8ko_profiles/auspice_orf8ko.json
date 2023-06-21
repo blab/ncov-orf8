@@ -10,24 +10,34 @@
       "type": "categorical"
     },
     {
-      "key": "orf8ko",
-      "title": "ORF8 Knockout",
+      "key": "cluster",
+      "title": "Cluster",
       "type": "categorical"
     },
     {
-      "key": "Ns",
-      "title": "Ns in ORFf8",
+      "key": "completeORF8_ko",
+      "title": "ORF8 KO",
+      "type": "categorical"
+    },
+    {
+      "key": "depth",
+      "title": "Cluster size",
       "type": "continuous"
     },
     {
-      "key": "gap",
-      "title": "Gapped bases in ORF8",
-      "type": "continuous"
+      "key": "ORF8_misStops",
+      "title": "Early stops in ORF8",
+      "type": "categorical"
     },
     {
-      "key": "protein_length",
-      "title": "Amino acids encoded by ORF8",
-      "type": "continuous"
+      "key": "ORF8_deletions",
+      "title": "Deletions in ORF8",
+      "type": "categorical"
+    },
+    {
+      "key": "ORF8_koType",
+      "title": "KO type in ORF8",
+      "type": "categorical"
     },
     {
       "key": "pango_lineage",
@@ -165,7 +175,7 @@
     "region"
   ],
   "display_defaults": {
-    "color_by": "orf8ko",
+    "color_by": "cluster",
     "distance_measure": "num_date",
     "geo_resolution": "division",
     "map_triplicate": true,
@@ -182,10 +192,13 @@
     "host",
     "epiweek",
     "QC_overall_status",
-    "orf8ko",
-    "Ns",
-    "protein_length",
-    "gapped"
+    "cluster",
+    "inWA",
+    "ORF8_misStops",
+    "ORF8_deletions",
+    "ORF8_koType",
+    "completeORF8_ko",
+    "depth"
   ],
   "panels": [
     "tree",

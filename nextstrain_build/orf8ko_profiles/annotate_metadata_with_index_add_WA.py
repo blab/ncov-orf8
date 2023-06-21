@@ -3,7 +3,7 @@
 import argparse
 from augur.io import read_metadata
 import pandas as pd
-
+import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -29,10 +29,13 @@ if __name__ == '__main__':
     }
     index = index.rename(columns=new_columns)
 
-    metadata.merge(
+    merged = metadata.merge(
         index,
-        on="strain",
-    ).to_csv(
+        on="strain")
+
+    merged["inWA"] = np.where(merged["division"] == "Washington", True, False)
+
+    merged.to_csv(
         args.output,
         sep="\t",
         index=False,

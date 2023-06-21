@@ -4,23 +4,23 @@ library(lubridate)
 setwd("~/Work/projects/covid/long-deletions")
 
 # Read in SARS2 ORF8 dataset
-df <- read_tsv("results/gisaid.washington.june20-july22.orf8ko.meta.tsv")
-clust <-read_tsv("clusters/geneClusters/WA_20K_ORF8_clusters.tsv")
+df <- read_tsv("results/gisaid.washington_ko_meta.tsv")
+clust <-read_tsv("nextstrain_build/results/WA_20k/clusters/clusters_ORF8.tsv")
 
 ## What is distribution of ORF8 knockouts by time?
 
 df %>%
-  filter(!is.na(ORF8_ko)) %>%
+  #filter(!is.na(ORF8_ko)) %>%
   ggplot(aes(x=date, fill =ORF8_ko, color=ORF8_ko)) +
-  geom_histogram(position="stack",bins=50) +
+  geom_histogram(position="stack",binwidth=7) +
   theme_minimal() +
   xlab("Date") +
   ylab("Washington\nSARS-CoV-2\nsequences") +
   scale_fill_manual(name="Orf8 KO", labels = c("No", "Yes"),values = c('#2a9d8f', '#ce4257')) +
   scale_color_manual(name="Orf8 KO", labels = c("No", "Yes"),values = c('#2a9d8f', '#ce4257')) +
-  ylim(0,7000)
+  ylim(0,4000)
 
-ggsave("figs/Orf8ko_time_updated.pdf",dpi=300,width=6.5,height=2)
+ggsave("figs/fig1/Orf8ko_time.pdf",dpi=300,width=6.5,height=2)
 
 
 df %>%
@@ -34,14 +34,14 @@ df %>%
   scale_color_manual(name="Orf8 KO", labels = c("No", "Yes"),values = c('#2a9d8f', '#ce4257')) +
   theme(legend.position="none")
 
-ggsave("figs/Of8ko_clade_updated.pdf",dpi=300,width=3,height=4.5)
+ggsave("figs/fig1/Orf8ko_clade.pdf",dpi=300,width=3,height=4.5)
 
 
 clust %>%
-  group_by(cluster,koType) %>%
+  group_by(cluster,ORF8_koType) %>%
   count() %>%
   filter(n>1) %>%
-  ggplot(aes(x=koType,y=n)) +
+  ggplot(aes(x=ORF8_koType,y=n)) +
   geom_violin(fill='#ce4257') +
   #geom_dotplot(binaxis='y',stackdir='center') +
   scale_y_log10() +
@@ -50,5 +50,5 @@ clust %>%
   scale_x_discrete(labels=c('Large deletion','Early stop codon')) +
   theme_minimal()
 
-ggsave("figs/Of8ko_clustSize.pdf",dpi=300,width=3,height=2)
+ggsave("figs/fig1/Orf8ko_clustSize.pdf",dpi=300,width=3,height=2)
 

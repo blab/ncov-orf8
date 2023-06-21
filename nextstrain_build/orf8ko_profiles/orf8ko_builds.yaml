@@ -6,8 +6,13 @@ custom_rules:
 inputs:
   - name: gisaid
     metadata: "data/gisaid_deletions.tsv.gz"
-    aligned: s3://nextstrain-ncov-private/aligned.fasta.xz
+    #aligned: s3://nextstrain-ncov-private/aligned.fasta.xz
+    aligned: "nextstrain-ncov-private/aligned.fasta.xz"
     skip_sanitize_metadata: true
+  #- name: root
+  #  metadata: "data/references_metadata.tsv"
+  #  aligned: "data/references_sequences.fasta"
+  #  skip_sanitize_metadata: true
 
 # Defines next align specs
 genes: ["ORF1a", "ORF1b", "S", "ORF3a", "E", "M", "ORF6", "ORF7a", "ORF7b", "ORF8", "N", "ORF9b"]
@@ -60,7 +65,39 @@ builds:
     title: Genomic epidemiology of SARS-CoV-2 in Washington
     country: USA
     division: Washington
-    latest_date: 2022-07-31
+    latest_date: 2023-03-31
+
+  Delta:
+    subsampling_scheme: clade
+    title: Genomic epidemiology of SARS-CoV-2 Delta in Washington
+    country: USA
+    division: Washington
+    latest_date: 2023-03-31
+    clade: ["21J (Delta)", "21I (Delta)", "21A (Delta)"]
+
+  Omicron:
+    subsampling_scheme: clade
+    title: Genomic epidemiology of SARS-CoV-2 Omicron in Washington
+    country: USA
+    division: Washington
+    latest_date: 2023-03-31
+    clade: ["21K (Omicron)", "22B (Omicron)", "21L (Omicron)", "22C (Omicron)", "22E (Omicron)", "22A (Omicron)", "23A (Omicron)", "22D (Omicron)", "22F (Omicron)", "23B (Omicron)", "21M (Omicron)"]
+
+  Alpha:
+    subsampling_scheme: Alpha
+    title: Genomic epidemiology of SARS-CoV-2 Alpha in Washington
+    country: USA
+    division: Washington
+    latest_date: 2023-03-31
+
+  WA_other:
+    subsampling_scheme: other
+    title: Genomic epidemiology of SARS-CoV-2, no Omicron, Alpha, or Delta in Washington
+    country: USA
+    division: Washington
+    latest_date: 2023-03-31
+    clade: ["20I (Alpha, V1)", "21J (Delta)", "21I (Delta)", "21A (Delta)", "21K (Omicron)", "22B (Omicron)", "21L (Omicron)", "22C (Omicron)", "22E (Omicron)", "22A (Omicron)", "23A (Omicron)", "22D (Omicron)", "22F (Omicron)", "23B (Omicron)", "21M (Omicron)"]
+
 
 # Define custom subsampling logic for county-level builds.
 subsampling:
@@ -122,6 +159,61 @@ subsampling:
       max_sequences: 5000
       max_date: --max-date {latest_date}
       query: --query "(country != '{country}' & (Nextstrain_clade != '20I (Alpha, V1)'))"
+
+  Alpha:
+    focal:
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (Nextstrain_clade == '20I (Alpha, V1)')"
+    country:
+      group_by: "division year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division != '{division}') & (Nextstrain_clade == '20I (Alpha, V1)')"
+    global:
+      group_by: "country year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country != '{country}') & (Nextstrain_clade == '20I (Alpha, V1)')"
+
+  clade:
+    focal:
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (ORF8_ko == 'Yes') & (Nextstrain_clade == {clade})"
+    division:
+      group_by: "location year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (ORF8_ko != 'Yes') & (Nextstrain_clade=={clade})"
+    country:
+      group_by: "division year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division != '{division}') & (Nextstrain_clade=={clade})"
+    global:
+      group_by: "country year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country != '{country}') & (Nextstrain_clade=={clade})"
+
+  other:
+    focal:
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (ORF8_ko == 'Yes') & (Nextstrain_clade != {clade})"
+    division:
+      group_by: "location year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division == '{division}') & (ORF8_ko != 'Yes') & (Nextstrain_clade != {clade})"
+    country:
+      group_by: "division year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country == '{country}') & (division != '{division}') & (Nextstrain_clade != {clade})"
+    global:
+      group_by: "country year month"
+      max_sequences: 5000
+      max_date: --max-date {latest_date}
+      query: --query "(country != '{country}') & (Nextstrain_clade != {clade})"
 
   50k_deletions:
     focal:

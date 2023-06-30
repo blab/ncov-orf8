@@ -1,5 +1,6 @@
 library(tidyverse)
 library(lubridate)
+library(colorblindcheck)
 
 setwd("~/Work/projects/covid/long-deletions")
 
@@ -7,25 +8,30 @@ setwd("~/Work/projects/covid/long-deletions")
 df <- read_tsv("results/gisaid.washington_ko_meta.tsv")
 clust <-read_tsv("nextstrain_build/results/WA_20k/clusters/clusters_ORF8.tsv")
 
+## Palette
+pal1 = c('#2a9d8f', '#ce4257')
+palette_check(pal1, plot = TRUE)
+
 ## What is distribution of ORF8 knockouts by time?
 
 df %>%
   #filter(!is.na(ORF8_ko)) %>%
-  ggplot(aes(x=date, fill =ORF8_ko, color=ORF8_ko)) +
+  ggplot(aes(x=date, fill =ORF8_koType, color=ORF8_koType)) +
   geom_histogram(position="stack",binwidth=7) +
   theme_minimal() +
   xlab("Date") +
-  ylab("Washington\nSARS-CoV-2\nsequences") +
+  ylab("Washington\nSARS-CoV-2 sequences") +
   scale_fill_manual(name="Orf8 KO", labels = c("No", "Yes"),values = c('#2a9d8f', '#ce4257')) +
   scale_color_manual(name="Orf8 KO", labels = c("No", "Yes"),values = c('#2a9d8f', '#ce4257')) +
-  ylim(0,4000)
+  ylim(0,4000) +
+  theme(legend.position=c(0.2,0.75))
 
-ggsave("figs/fig1/Orf8ko_time.pdf",dpi=300,width=6.5,height=2)
+ggsave("figs/fig1/Orf8ko_time.pdf",dpi=300,width=5,height=2)
 
 
 df %>%
   filter(!is.na(ORF8_ko)) %>%
-  ggplot(aes(y=Nextstrain_clade, fill =ORF8_ko, color=ORF8_ko)) +
+  ggplot(aes(y=Nextstrain_clade, fill =ORF8_koType, color=ORF8_koType)) +
   geom_histogram(stat="count",position='fill',bins=50) +
   theme_minimal() +
   xlab("Proportion") +

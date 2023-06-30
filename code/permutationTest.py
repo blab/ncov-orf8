@@ -19,10 +19,10 @@ import json
 
 def load_df(path):
     with open(path, 'r') as f:
-        df = pd.read_csv(f, sep='\t',usecols=['cluster','cladeType','leaf_count','days_circulated','mutType','node_id','mut_count'])
+        df = pd.read_csv(f, sep='\t',usecols=['cluster','cladeType','leaf_count','days_circulated','mutType','node_id','mut_count','branch_muts_count'])
     df['mutType'] = df['mutType'].astype("category")
     df['cladeType'] = df['cladeType'].astype("category")
-    df[["cluster", "leaf_count","mut_count"]] = df[["cluster", "leaf_count","mut_count"]].apply(pd.to_numeric,downcast="unsigned")
+    df[["cluster", "leaf_count","mut_count","branch_muts_count"]] = df[["cluster", "leaf_count","mut_count","branch_muts_count"]].apply(pd.to_numeric,downcast="unsigned")
     df["days_circulated"] = pd.to_numeric(df["days_circulated"],downcast="float")
     return df
 
@@ -54,7 +54,8 @@ def permutation_test_absolute(df,size,var,direct='greater'):
 
 def permut_gene(df, size):
     d = {}
-    new_df = df[df.mut_count>0]
+    #new_df = df[df.mut_count>0]
+    new_df = df[df.branch_muts_count==1]
     for mut in ['nonsense','missense','synonymous']:
         filt = new_df[new_df.mutType==mut]
         d[mut] = {}

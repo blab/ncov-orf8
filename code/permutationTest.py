@@ -52,10 +52,10 @@ def permutation_test_absolute(df,size,var,direct='greater'):
     pvalue = total/size
     return pvalue, means, trueMean #,prop
 
-def permut_gene(df, size):
+def permut_gene(new_df, size):
     d = {}
     #new_df = df[df.mut_count>0]
-    new_df = df[df.branch_muts_count==1]
+    #new_df = df[df.branch_muts_count==1]
     for mut in ['nonsense','missense','synonymous']:
         filt = new_df[new_df.mutType==mut]
         d[mut] = {}

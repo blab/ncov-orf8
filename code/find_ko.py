@@ -37,6 +37,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('--align', type=str, required=True, help = 'path to alignment file as fasta')
     parser.add_argument('--ref', type=str, required=True, help = 'genbank file')
+    parser.add_argument('--amplicon', default=False, action='store_true', help = 'flag to call known amplicon dropout sites as KO')
     parser.add_argument('--output', type=str, required=True, help = 'path to output TSV')
     args = parser.parse_args()
 
@@ -97,24 +98,25 @@ if __name__ == '__main__':
                                 gone += (end - nstart + 1)
                             else:
                                 gone += (nend - nstart + 1)
-                            if (gapLength)%3 != 0:
-                                fshift.append(str(nstart)+'-'+str(nend)+':'+refgene[nstart:nend]+'>'+''.join(['-'*gapLength]))
+                        #    if (gapLength)%3 != 0:
+                        #        fshift.append(str(nstart)+'-'+str(nend)+':'+refgene[nstart:nend]+'>'+''.join(['-'*gapLength]))
                         elif nstart < start and nend>=start:
                             loc.append((nstart,nend))
                             gloc.append((nstart,nend))
                             gone += (nend - nstart + 1)
-                            if (gapLength)%3 != 0:
-                                fshift.append(str(nstart)+'-'+str(nend)+':'+refgene[nstart:nend]+'>'+''.join(['-'*gapLength]))
+                        if (gapLength)%3 != 0:
+                            fshift.append(str(nstart)+'-'+str(nend)+':'+refgene[nstart:nend]+'>'+''.join(['-'*gapLength]))
 
                 if len(loc):
-                    if record.seq[27807-1]=='T':
-                        drop = []
-                        for i,(cstart,cend) in enumerate(loc):
-                            if cstart >= 27808 or cstart < 27854:
-                                drop.append(i)
-                        if len(drop)>0:
-                            for idx in reversed(drop):
-                                del loc[idx]
+                    if args.amplicon == False:
+                        if record.seq[27807-1]=='T':
+                            drop = []
+                            for i,(cstart,cend) in enumerate(loc):
+                                if cstart >= 27808 and cstart < 27854:
+                                    drop.append(i)
+                            if len(drop)>0:
+                                for idx in reversed(drop):
+                                    del loc[idx]
 
                     sizes = [cend - cstart for cstart,cend in loc]
                     if len(loc):

@@ -1,23 +1,41 @@
 library(tidyverse)
 library(lubridate)
 library(questionr)
+library(pwr)
 
 setwd("~/Work/projects/covid/long-deletions")
 ## Read in SARS2 ORF8 dataset
-ko <- read_tsv("results/gisaid.washington.june20-july22.ORF8_ko.meta.tsv")
-clusters <- read_tsv("clusters/detailedClusters/orf8ko_noAlpha_ko_meta_clusters.tsv")
+ko <- read_tsv("results/gisaid.washington_ko_meta.tsv")
+clustersAlpha <- read_tsv("nextstrain_helper/results/Alpha/clusters/clusters_ORF8.tsv")
+clustersDelta <- read_tsv("nextstrain_helper/results/Delta/clusters/clusters_ORF8.tsv")
+clustersOther <- read_tsv("nextstrain_helper/results/WA_other/clusters/clusters_ORF8.tsv")
 wdrs <- read_csv("data/wdrs_metadata_9.2.22.csv")
 
+## Generate cluster size
+Alpha_size <- clustersAlpha %>% group_by(cluster) %>%
+  add_count() %>%
+  ungroup %>%
+  rename(clusterSize = n) %>%
+  select(strain,clusterSize)
 
-## Merge datasets
-# First, let's see what would not join:
-not_in_ko <- metadata %>%
-  anti_join(ko, by="strain")
-ko %>%
-  anti_join(metadata,by="strain")
-# Everything is there
+Delta_size <- clustersDelta %>% group_by(cluster) %>%
+  add_count() %>%
+  ungroup %>%
+  rename(clusterSize = n) %>%
+  select(strain,clusterSize)
 
-not_in_wdrs <- metadata %>%
+Other_size <- clustersOther %>% group_by(cluster) %>%
+  add_count() %>%
+  ungroup %>%
+  rename(clusterSize = n) %>%
+  select(strain,clusterSize)
+
+size <- Alpha_size %>%
+  bind_rows(Delta_size) %>%
+  bind_rows(Other_size)
+
+
+not_in_wdrs <- ko %>%
   anti_join(wdrs, by = c("strain" = "gisaid_id"))
 not_in_wdrs %>%
   select(submitting_lab) %>%
@@ -25,67 +43,68 @@ not_in_wdrs %>%
   print(n=100)
 wa_not_in_wdrs <- not_in_wdrs %>%
   filter(str_detect(submitting_lab, "Washington|UW|Seattle|Fred Hutch|Atlas|Altius"))
-# Hmm, there are 9593 samples in metadata not in WDRS and definitely from 
-# local submitters... This is more than the 5,000 or so Lauren mentioned. I'll 
-# have to ask about it.
-not_in_metadata_in_wdrs <- wdrs %>%
-  anti_join(metadata, by = c("gisaid_id" = "strain"))
-# There's 2142 samples in wdrs, not in metadata, I hope they are newer samples 
-# added recently, but I have no way of checking this in the absence of metadata.
-# Let's actually do the join
+# There are ~30,000 WA samples not in WDRS
 
-clustStatus = clusters %>%
-  group_by(cluster) %>%
-  count() %>% 
-  rename(clusterSize=n) %>%
-  right_join(clusters, by='cluster') %>%
-  select(strain,cluster,clusterSize)
+wa_not_in_wdrs %>%
+  ggplot(aes(x=date)) +
+  geom_histogram()
+## Many of these are after mid-2022 when the data was pulled. But there are ones
+## missing from earlier. Oh well.
 
+
+
+not_in_koin_wdrs <- wdrs %>%
+  anti_join(ko, by = c("gisaid_id" = "strain"))
+# There's 2152 samples in wdrs, not in metadata/ko. Maybe these were culled
+# because there coverage was too low..
+
+## Combine WDRS, cluster size, and KO info
 df <- ko %>%
   inner_join(wdrs, by = c("strain" = "gisaid_id")) %>%
-  left_join(clustStatus) %>%
-  mutate(koConfirm = ifelse(clusterSize>1|Nextstrain_clade=="20I (Alpha, V1)",'yes','no')) %>%
-  mutate(koConfirm = ifelse(is.na(koConfirm),'no',koConfirm))
-
-## Call ORF 8 KOs
-df <- df %>%
-  mutate(Nextstrain_clade = as_factor(Nextstrain_clade))
+  left_join(size, by = c("strain"))
+            
 
 ## Plot distribution of potential predictors by ORF8_ko
 # Sex at birth
 df %>%
-  ggplot(aes(koConfirm, color=sex_at_birth,fill=sex_at_birth)) +
+  ggplot(aes(ORF8_ko, color=sex_at_birth,fill=sex_at_birth)) +
   geom_bar(position="fill")
 # Pretty even sex split in yes & no
-
+# without omicron
 df %>%
-  ggplot(aes(koConfirm, color=sex_at_birth,fill=sex_at_birth)) +
-  geom_bar(stat="count")
-# And there are very few NA's so should be fiiine
+  filter(!grepl('Omicron',Nextstrain_clade)) %>%
+  ggplot(aes(ORF8_ko, color=sex_at_birth,fill=sex_at_birth)) +
+  geom_bar(position="fill")
 
 # Age
 df %>%
-  ggplot(aes(koConfirm, color=age_group,fill=age_group)) +
-  geom_bar(position="fill")
-# There are younger people on average with the ko, than without. Not sure how much of that is due to variant/timing bias. But interesting...
-# Age without alpha
-df %>%
-  filter(Nextstrain_clade != "20I (Alpha, V1)") %>%
+  filter(!is.na(age_group)) %>%
   ggplot(aes(ORF8_ko, color=age_group,fill=age_group)) +
   geom_bar(position="fill")
-## Age distributions essentially identical without alpha.
+# There are younger people on average with the ko, than without. 
+# May be due to variant/timing bias... But interesting...
+
+# Age without omicron
+df %>%
+  filter(!is.na(age_group)) %>%
+  filter(!grepl('Omicron',Nextstrain_clade)) %>%
+  ggplot(aes(ORF8_ko, color=age_group,fill=age_group)) +
+  geom_bar(position="fill")
+## Even more age skewed without Omicron 
+
+## without alpaha
+df %>%
+  filter(!is.na(age_group)) %>%
+  filter(!grepl('Alpha',Nextstrain_clade)) %>%
+  ggplot(aes(ORF8_ko, color=age_group,fill=age_group)) +
+  geom_bar(position="fill")
+## age skew mostly comes from Alpha
 
 # Variant
 df %>%
-  ggplot(aes(koConfirm, color=Nextstrain_clade,fill=Nextstrain_clade)) +
-  geom_bar(position="fill")
-# Alpha is confusing this, since all of alpha have the orf8 ko. I'll compare without alpha.
-df %>%
-  filter(Nextstrain_clade != "20I (Alpha, V1)") %>%
   ggplot(aes(ORF8_ko, color=Nextstrain_clade,fill=Nextstrain_clade)) +
   geom_bar(position="fill")
-# without Alpha we do not have the same distribution across variants in orf8 KOs.
-# This is a good reason to stick with the original plan of matched controls.
+
 
 ## Vaccines
 df <- df %>%
@@ -99,20 +118,22 @@ df <- df %>%
 # Vaccine is eliminated if received less than 14 days ago. After elimination, 
 # calculates day since last vaccine was given.
 df %>%
-  filter(Nextstrain_clade != "20I (Alpha, V1)") %>%
+  #filter(Nextstrain_clade != "20I (Alpha, V1)") %>%
   filter(!is.na(ORF8_ko)) %>%
   ggplot(aes(days_since_vaccination,color=ORF8_ko,fill=ORF8_ko,)) +
   geom_histogram(aes(y=0.5*..density..),alpha=0.5,position='identity')
-# Distributions seem to be very similar for days_since_vaccination by ORF8_ko
+# For ORF8KO, people seem to have slightly fewer days since vacccination. 
+# Should consider adding in time since shot as a continuous variable...
 
 ## Hospital
 df$hosp = as_factor(df$hosp)
 df$hosp = fct_relevel(df$hosp, "No", "Yes","Unknown")
 df %>%
-  #filter(hosp!='Unknown') %>%
+  filter(hosp!='Unknown') %>%
+  filter(!grepl("Omicron",Nextstrain_clade)) %>%
   filter(!is.na(ORF8_ko)) %>%
   filter(!is.na(hosp)) %>%
-  ggplot(aes(koConfirm, color=hosp,fill=hosp)) +
+  ggplot(aes(ORF8_ko, color=hosp,fill=hosp)) +
   geom_bar(position="fill") +
   theme_minimal() +
   scale_x_discrete(labels=c('No','Yes')) +
@@ -136,7 +157,9 @@ df$death = fct_relevel(df$death, "No", "Yes")
 df %>%
   filter(!is.na(ORF8_ko)) %>%
   filter(!is.na(died)) %>%
-  ggplot(aes(koConfirm, color=died,fill=died)) +
+  filter(!grepl("Omicron",Nextstrain_clade)) %>%
+  filter(!is.na(ORF8_ko)) %>%
+  ggplot(aes(ORF8_ko, color=died,fill=died)) +
   geom_bar(position="fill") +
   scale_x_discrete(labels=c("No","Yes")) +
   theme_minimal() +
@@ -153,80 +176,196 @@ ggsave('figs/death_bars.pdf',dpi=300,height=3,width=3)
 
 ## Logistic regression
 # Hospitalization
+HospRegression = function(df, x) {
+  df$age_group = fct_relevel(df$age_group, "0-4", "5-17", "18-44", "45-64", "65-79", "80+", "Unknown")
+  df_hosp <- df %>%
+    filter(hosp != "Unknown") %>%
+    filter(age_group != "Unknown") %>%
+    filter(!is.na(age_group)) %>%
+    filter(!is.na(ORF8_ko)) %>%
+    filter(sex_at_birth != 'Other') %>%
+    filter(!grepl("Omicron",Nextstrain_clade)) %>%
+    filter(coverage>= 0.95) %>%
+    mutate(KO = ifelse(ORF8_ko == 'Yes' & clusterSize>x, 'Yes','No'))
+    #mutate(KO = ifelse(ORF8_ko == 'Yes', 'Yes','No'))
+  df_hosp$age_group = as.numeric(df_hosp$age_group)
+  df_hosp$hosp = as.factor(df_hosp$hosp)
+  
+  
+  reg1 <- glm(hosp ~ KO+ age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp)
+  print(summary(reg1))
+  
+  or_hosp = questionr::odds.ratio(reg1, level=(1-(0.05)))
+  return(or_hosp)
+}
+
+for (clustSize in seq(1,20,1)) {
+  print(clustSize)
+  print(HospRegression(df,clustSize))
+}
+
+or_hosp_7 = HospRegression(df,7)
+or_hospF = questionr::odds.ratio(hosp1,level=(1-(0.05)))
+
+## Is time since vaccination an issue?
 df$age_group = fct_relevel(df$age_group, "0-4", "5-17", "18-44", "45-64", "65-79", "80+", "Unknown")
+df_vaxx <- df %>%
+  filter(hosp != "Unknown") %>%
+  filter(age_group != "Unknown") %>%
+  filter(!is.na(age_group)) %>%
+  filter(!is.na(ORF8_ko)) %>%
+  filter(vaccinated=='yes') %>%
+  filter(sex_at_birth != 'Other') %>%
+  filter(!grepl("Omicron",Nextstrain_clade)) %>%
+  filter(coverage>= 0.95)
+df_vaxx$age_group = as.numeric(df_vaxx$age_group)
+df_vaxx$hosp = as.factor(df_vaxx$hosp)
+  
+vax1 <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth + days_since_vaccination, family = "binomial", data = df_vaxx)
+print(summary(vax1))
+vax2 <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth, family = "binomial", data = df_vaxx)
+summary(vax2)
+vax3 <- glm(hosp ~ ORF8_ko*days_since_vaccination + age_group + sex_at_birth, family = "binomial", data = df_vaxx)
+summary(vax3)
+vax4 <- glm(hosp ~ days_since_vaccination + age_group + sex_at_birth, family = "binomial", data = df_vaxx)
+summary(vax4)
+vax5 <- glm(hosp ~ days_since_vaccination*age_group + sex_at_birth, family = "binomial", data = df_vaxx)
+summary(vax5)
+vax6 <- glm(hosp ~ age_group + sex_at_birth*days_since_vaccination, family = "binomial", data = df_vaxx)
+summary(vax6)
+## ORF8KO doesn't seem to have an effect on clinical outcomes in vaccinated people.
+## instead, i'm observing this weird effect in which the more days out you are
+## from vaccination, the less likely you are to get sick...
+
 df_hosp <- df %>%
   filter(hosp != "Unknown") %>%
   filter(age_group != "Unknown") %>%
   filter(!is.na(age_group)) %>%
-  filter(!is.na(ORF8_ko))
+  filter(!is.na(ORF8_ko)) %>%
+  filter(sex_at_birth != 'Other') %>%
+  filter(!grepl("Omicron",Nextstrain_clade)) %>%
+  filter(coverage>= 0.95)
 df_hosp$age_group = as.numeric(df_hosp$age_group)
 df_hosp$hosp = as.factor(df_hosp$hosp)
 
+hosp1 <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp)
+summary(hosp1)
+hosp2 <- glm(hosp ~ ORF8_ko*vaccinated + age_group + sex_at_birth , family = "binomial", data = df_hosp)
+summary(hosp2)
+hosp3 <- glm(hosp ~ ORF8_ko + age_group*vaccinated + sex_at_birth , family = "binomial", data = df_hosp)
+summary(hosp3)
+hosp4 <- glm(hosp ~ ORF8_ko + age_group +vaccinated*sex_at_birth , family = "binomial", data = df_hosp)
+summary(hosp4)
+hosp5 <- glm(hosp ~ ORF8_ko*age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp)
+summary(hosp5)
+hosp6 <- glm(hosp ~ ORF8_ko*sex_at_birth + age_group +  vaccinated, family = "binomial", data = df_hosp)
+summary(hosp6)
+hosp7 <- glm(hosp ~ ORF8_ko*age_group*vaccinated + sex_at_birth, family = "binomial", data = df_hosp)
+summary(hosp7)
+hosp8 <- glm(hosp ~ ORF8_ko:age_group + ORF8_ko + age_group + ORF8_ko:vaccinated + vaccinated + sex_at_birth, family = "binomial", data = df_hosp)
+summary(hosp8)
 
+## Effect of ORF8KO & vaccines seems to be stronger in younger people...
+## Effect of ORF8KO only in unvaccinated people
+## Timing of vaccine rollout?
+## Variant timing??
+df_noVax <- df %>%
+  filter(hosp != "Unknown") %>%
+  filter(age_group != "Unknown") %>%
+  filter(!is.na(age_group)) %>%
+  filter(!is.na(ORF8_ko)) %>%
+  filter(sex_at_birth != 'Other') %>%
+  filter(!grepl("Omicron",Nextstrain_clade)) %>%
+  filter(coverage>= 0.95) %>%
+  filter(vaccinated=='no')
+df_noVax$age_group = as.numeric(df_noVax$age_group)
+df_noVax$hosp = as.factor(df_noVax$hosp)
 
-clades_30_hosp <- df_hosp %>%
-  group_by(Nextstrain_clade, ORF8_ko) %>%
-  summarise(number = n()) %>%
-  arrange(Nextstrain_clade) %>%
-  filter(number > 30) %>%
-  group_by(Nextstrain_clade) %>%
-  summarise(rows = n()) %>%
-  filter(rows > 1) %>%
-  pull(Nextstrain_clade)
+noVax1 <- glm(hosp ~ ORF8_ko +age_group + sex_at_birth, family = "binomial", data = df_noVax)
+summary(noVax1)
+noVax2 <- glm(hosp ~ ORF8_ko*age_group + sex_at_birth, family = "binomial", data = df_noVax)
+summary(noVax2)
+## Yeah biggest impact in unvaccinated
 
-
-reg1 <- glm(hosp ~ koConfirm+ age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp)
-summary(reg1)
-
-or_hosp = questionr::odds.ratio(reg1, level=(1-(0.05)))
-
-
-for (variant in clades_30_hosp) {
-  reg <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp[df_hosp$Nextstrain_clade == variant,])
-  summary(reg)
-  or <- as.tibble(questionr::odds.ratio(reg, level=1-0.05),rownames="variable")
-  print(variant)
-  print(or)
-}
 
 # Death
+DeathRegression = function(df,x) {
+  df_death <- df %>%
+  filter(age_group != "Unknown") %>%
+  filter(!is.na(age_group)) %>%
+  filter(!is.na(ORF8_ko)) %>%
+  filter(!is.na(died)) %>% 
+  filter(sex_at_birth != 'Other') %>%
+  filter(!grepl("Omicron",Nextstrain_clade)) %>%
+  filter(coverage>= 0.95) %>%
+  filter(!is.na(sex_at_birth)) %>%
+  #mutate(KO = ifelse(ORF8_ko == 'Yes' & clusterSize>x, 'Yes','No'))
+  mutate(KO = ifelse(ORF8_ko == 'Yes' & clusterSize>x, 'Yes','No'))
+  df_death$age_group = as.numeric(df_death$age_group)
+  df_death$died = fct_relevel(df_death$died, "No", "Yes")
+  
+  reg2 <- glm(died ~ KO + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_death)
+  print(summary(reg2))
+  
+  or_death = questionr::odds.ratio(reg2, level=(1-(0.05)))
+  return(or_death)
+}  
+
+
+for (clustSize in seq(1,20,1)) {
+  print(clustSize)
+  print(DeathRegression(df,clustSize))
+}
+
 df_death <- df %>%
   filter(age_group != "Unknown") %>%
   filter(!is.na(age_group)) %>%
   filter(!is.na(ORF8_ko)) %>%
-  filter(!is.na(died))
+  filter(!is.na(died)) %>% 
+  filter(sex_at_birth != 'Other') %>%
+  filter(!grepl("Omicron",Nextstrain_clade)) %>%
+  filter(coverage>= 0.95) %>%
+  filter(!is.na(sex_at_birth)) %>%
+  filter(!is.na(vaccinated))
 df_death$age_group = as.numeric(df_death$age_group)
-df_death$died = fct_relevel(df_death$died, "no", "yes")
+df_death$died = fct_relevel(df_death$died, "No", "Yes")
 
 
+death1 <- glm(died ~ ORF8_ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_death)
+summary(death1)
+death2 <- glm(died ~ ORF8_ko + age_group+ vaccinated, family = "binomial", data = df_death)
+summary(death2)
 
-clades_30_death <- df_death %>%
-  group_by(Nextstrain_clade, ORF8_ko) %>%
-  summarise(number = n()) %>%
-  arrange(Nextstrain_clade) %>%
-  filter(number > 30) %>%
-  group_by(Nextstrain_clade) %>%
-  summarise(rows = n()) %>%
-  filter(rows > 1) %>%
-  pull(Nextstrain_clade)
+summary(death1)
+or_death <- DeathRegression(df,1)
+jtools::summ(hosp7)
 
+### Do we even have power to detect an effect of death?
+df_death %>%
+  group_by(ORF8_ko, died) %>%
+  count()
 
-reg2 <- glm(died ~ koConfirm + age_group + vaccinated, family = "binomial", data = df_death)
-summary(reg2)
+n1 = 8203 + 107
+n2 = 40362+796
+p2 = 796/n2
+p1 = p2*0.86
+pwr.2p2n.test(h=ES.h(p1,p2),n1 =n1, n2 =n2, alternative='less',sig.level=0.05)
+#pwr.f2.test(u=4,v=49457,f2=0.13)
 
-or_death = questionr::odds.ratio(reg2, level=(1-(0.05)))
 or_death <- cbind(Variable = rownames(or_death), or_death)
-or_hosp <- cbind(Variable = rownames(or_hosp), or_hosp)
-or_hosp <- cbind(ko = c('no','yes','no','no','no','no'), or_hosp)
 
-or_death <- cbind(ko = c('no','yes','no','no'), or_death)
-colnames(or_hosp)[3] ="minCI"
-colnames(or_hosp)[4] ="maxCI"
-colnames(or_death)[3] ="minCI"
-colnames(or_death)[4] ="maxCI"
+  
+or_hospF <- cbind(Variable = rownames(or_hospF), or_hospF)
+or_hospF <- cbind(ko = c('no','yes','no','no','no'), or_hospF)
+
+or_death <- cbind(ko = c('no','yes','no', 'no','no'), or_death)
+colnames(or_hospF)[4] ="minCI"
+colnames(or_hospF)[5] ="maxCI"
+colnames(or_death)[4] ="minCI"
+colnames(or_death)[5] ="maxCI"
 
 
-or_hosp %>%
+or_hospF %>%
   filter(Variable!="(Intercept)") %>%
   ggplot(aes(y=Variable,x=OR)) +
   geom_vline(xintercept=1,linetype='dashed') +
@@ -234,7 +373,7 @@ or_hosp %>%
   geom_point(size=5,aes(color=ko,fill=ko))+
   scale_x_log10() +
   theme_minimal() +
-  scale_y_discrete(labels=c('Age group', 'ORF8 KO','Sex: Male', 'Sex: Other', 'Vaccinated')) +
+  scale_y_discrete(labels=c('Age group', 'ORF8 KO','Sex: Male', 'Vaccinated')) +
   ylab('') +
   xlab('Odds ratio for hospitalization') +
   scale_color_manual(values=c('grey','#ce4257')) +
@@ -251,7 +390,7 @@ or_death %>%
   geom_point(size=5,aes(color=ko,fill=ko))+
   scale_x_log10() +
   theme_minimal() +
-  scale_y_discrete(labels=c('Age group', 'ORF8 KO','Vaccinated')) +
+  scale_y_discrete(labels=c('Age group', 'ORF8 KO','Sex: Male','Vaccinated')) +
   ylab('') +
   xlab('Odds ratio for death') +
   scale_color_manual(values=c('grey','#ce4257')) +
@@ -265,106 +404,5 @@ ggsave('figs/or_death.pdf',dpi=300,height=3,width=4)
 
 
 
-## Broken up by groups: Delta, Omicron, Gamma & 20A|20B|20C|20D|20G
-group = list("Delta", "Omicron", "Gamma")
 
-
-for (variant in group){
-  cat(paste("##",variant,"\n","*Hospitalization:*\n"))
-  freq_tab_hosp <- df_hosp %>%
-    filter(variant %in% Nextstrain_clade) %>%
-    group_by(ORF8_ko) %>%
-    summarise(n_samples = n())
-  print(kable(freq_tab_hosp, caption = paste("Samples with hospitalization data in ", variant, ".")))
-  if (variant %in% clades_30_hosp){
-    reg_hosp <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp[variant %in% df_hosp$Nextstrain_clade,])
-    or_hosp <- as.tibble(questionr::odds.ratio(reg_hosp, level=(1-(0.05))), rownames = "Predictor")
-    plot_hosp <- df_hosp %>%
-      filter(variant %in% Nextstrain_clade) %>%
-      ggplot(aes(ORF8_ko, color=hosp,fill=hosp)) +
-      geom_bar(position="fill",width=0.7) +
-      ylab("Proportion") +
-      xlab("ORF8_ko") + 
-      scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
-      scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
-      theme_minimal() +
-      theme(text = element_text(size = 10)) +
-      ggtitle(label=variant)
-    print(plot_hosp)
-    print(kable(or_hosp[2:6,], caption = paste("Odds Ratio of Hospitalization for ",variant,"."),align="lllll"))
-  }
-  cat(paste("*Death:*\n"))
-  freq_tab_death <- df_death %>%
-    filter(variant %in% Nextstrain_clade) %>%
-    group_by(ORF8_ko) %>%
-    summarise(n_samples = n())
-  print(kable(freq_tab_death, caption = paste("Samples with death data in ", variant, ".")))
-  reg_death <- glm(died ~ ORF8_ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_death[variant %in% df_hosp$Nextstrain_clade,])
-  or_death <- as.tibble(questionr::odds.ratio(reg_death, level=(1-(0.05))), rownames = "Predictor")
-  plot_death <- df_death %>%
-    filter(variant %in% df_hosp$Nextstrain_clade) %>%
-    ggplot(aes(ORF8_ko, color=died,fill=died)) +
-    geom_bar(position="fill",width=0.7) +
-    ylab("Proportion") +
-    xlab("ORF8_ko") + 
-    scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
-    scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
-    theme_minimal() +
-    theme(text = element_text(size = 10)) +
-    ggtitle(label=variant)
-  print(plot_death)
-  print(kable(or_death[2:6,], caption = paste("Odds Ratio of dying for ",variant,"."),align="lllll"))
-}
-
-## Non-voc virus
-cat("##Non-VOC viruses\n*Hospitalization:*\n")
-freq_tab_hosp <- df_hosp %>%
-  filter(Nextstrain_clade == "20A" | Nextstrain_clade=="20B"|Nextstrain_clade=="20C"|Nextstrain_clade=="20D"|Nextstrain_clade=="20G") %>%
-  group_by(ORF8_ko) %>%
-  summarise(n_samples = n())
-print(kable(freq_tab_hosp, caption = "Non-VOC samples with hospitalization data."))
-if (freq_tab_hosp[freq_tab_hosp$ORF8_ko=="yes",2]>30){
-  reg_hosp <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_hosp[df_hosp$Nextstrain_clade == "20A" | df_hosp$Nextstrain_clade=="20B"|df_hosp$Nextstrain_clade=="20C"|df_hosp$Nextstrain_clade=="20D"|df_hosp$Nextstrain_clade=="20G",])
-  or_hosp <- as.tibble(questionr::odds.ratio(reg_hosp, level=(1-(0.05))), rownames = "Predictor")
-  plot_hosp <- df_hosp %>%
-    filter(Nextstrain_clade == "20A" | Nextstrain_clade=="20B"|Nextstrain_clade=="20C"|Nextstrain_clade=="20D"|Nextstrain_clade=="20G") %>%
-    ggplot(aes(ORF8_ko, color=hosp,fill=hosp)) +
-    geom_bar(position="fill",width=0.7) +
-    ylab("Proportion") +
-    xlab("ORF8_ko") + 
-    scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
-    scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
-    theme_minimal() +
-    theme(text = element_text(size = 10)) +
-    ggtitle(label="Non-VOC viruses")
-  print(plot_hosp)
-  print(kable(or_hosp[2:6,], caption = "Odds Ratio of Hospitalization for Non-VOC viruses.",align="lllll"))
-}
-cat(paste("*Death:*\n"))
-freq_tab_death <- df_death %>%
-  filter(Nextstrain_clade == "20A" | Nextstrain_clade=="20B"|Nextstrain_clade=="20C"|Nextstrain_clade=="20D"|Nextstrain_clade=="20G") %>%
-  group_by(ORF8_ko) %>%
-  summarise(n_samples = n())
-print(kable(freq_tab_death, caption = "Non-VOC samples with death data."))
-reg_death <- glm(died ~ ORF8_ko + age_group + sex_at_birth + vaccinated, family = "binomial", data = df_death[df_death$Nextstrain_clade == "20A" | df_death$Nextstrain_clade=="20B"|df_death$Nextstrain_clade=="20C"|df_death$Nextstrain_clade=="20D"|df_death$Nextstrain_clade=="20G",])
-or_death <- as.tibble(questionr::odds.ratio(reg_death, level=(1-(0.05))), rownames = "Predictor")
-plot_death <- df_death %>%
-  filter(Nextstrain_clade == "20A" | Nextstrain_clade=="20B"|Nextstrain_clade=="20C"|Nextstrain_clade=="20D"|Nextstrain_clade=="20G") %>%
-  ggplot(aes(ORF8_ko, color=died,fill=died)) +
-  geom_bar(position="fill",width=0.7) +
-  ylab("Proportion") +
-  xlab("ORF8_ko") + 
-  scale_fill_manual(values =c("#ADEFD1FF","#00203FFF")) +
-  scale_color_manual(values =c("#ADEFD1FF","#00203FFF")) +
-  theme_minimal() +
-  theme(text = element_text(size = 10)) +
-  ggtitle(label="Non-VOC viruses")
-print(plot_death)
-print(kable(or_death[2:6,], caption = "Odds Ratio of dying for Non-VOC viruses.",align="lllll"))
-summary(reg_death)
-
-reg_death_novax <- glm(died ~ ORF8_ko + age_group + sex_at_birth, family = "binomial", data = df_death[df_death$Nextstrain_clade == "20A" | df_death$Nextstrain_clade=="20B"|df_death$Nextstrain_clade=="20C"|df_death$Nextstrain_clade=="20D"|df_death$Nextstrain_clade=="20G",])
-or_death_novax <- as.tibble(questionr::odds.ratio(reg_death_novax, level=(1-(0.05))), rownames = "Predictor")
-kable(or_death_novax[2:5,], caption = "Odds Ratio of dying for Non-VOC viruses without vaccination status.",align="lllll")
-summary(reg_death_novax)
 

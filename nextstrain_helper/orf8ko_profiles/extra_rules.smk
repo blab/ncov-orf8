@@ -12,7 +12,8 @@ rule add_metadata:
         deletions = "orf8ko_profiles/gisaid.washington_ko.tsv"
     params:
         key = "strain",
-        add = "ORF8_ko"
+        add = "ORF8_ko",
+        notblank = "coverage"
     output:
         combined = "data/gisaid_deletions.tsv.gz"
     shell:
@@ -23,7 +24,8 @@ rule add_metadata:
          --append-fields {params.add} \
          -H \
          --write-all ''\
-         | gzip > {output.combined}
+         | tsv-filter \
+         -H --not-blank {params.notblank} | gzip > {output.combined}
         """
 
 rule annotate_metadata:
@@ -75,6 +77,7 @@ rule filter_replace:
         exclude = _collect_exclusion_files,
     output:
         sequences = "results/{build_name}/filtered.fasta",
+        metadata = "results/{build_name}/metadata_filtered.tsv.xz",
         filter_log = "results/{build_name}/filtered_log.tsv",
     log:
         "logs/filtered_{build_name}.txt"
@@ -102,7 +105,8 @@ rule filter_replace:
             {params.ambiguous} \
             --exclude {input.exclude} \
             --exclude-where {params.exclude_where}\
-            --output {output.sequences} \
+            --output-sequences {output.sequences} \
+            --output-metadata {output.metadata} \
             --output-log {output.filter_log} 2>&1 | tee {log};
         """
 

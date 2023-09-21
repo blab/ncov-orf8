@@ -15,3 +15,14 @@ Knockout of the ORF8 protein has repeatedly spread through the global viral popu
 ---
 
 #### Structure of this repository
+This repository includes the code for the analyses and figures for the above manuscript. 
+Clinical data from Washington State Disease Reporting System is not included as this data is derived from confidential medical records. 
+GISAID metadata and sequenced used in the analysis may be downloaded from [GISAID](https://gisaid.org/).  
+The SARS-CoV-2 UShER phylogeny is available from [UShER](http://hgdownload.soe.ucsc.edu/goldenPath/wuhCor1/UShER_SARS-CoV-2/).
+- `code` contains the scripts for all analyses.
+- `nextstrain_build` contains the configurations for building the nextstrain trees to identify transmission clusters of gene knockouts in Washington State.
+- `envs` contains the conda config files for python code and notebooks.
+- `figs` contains the figures for the manuscript.
+- `notebooks` contains jupyter notebooks for plotting results and initial analyses.
+- `params` includes the SARS-CoV-2 reference genomes used in analyses & the config file for snakemake pipeline.
+- `usher` contains results from analyses using the usher phylogeny.

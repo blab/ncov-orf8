@@ -339,4 +339,3 @@ reg_death_novax <- glm(died ~ orf8ko + age_group + sex_at_birth, family = "binom
 or_death_novax <- as.tibble(questionr::odds.ratio(reg_death_novax, level=(1-(0.05))), rownames = "Predictor")
 kable(or_death_novax[2:5,], caption = "Odds Ratio of dying for Non-VOC viruses without vaccination status.",align="lllll")
 summary(reg_death_novax)
-

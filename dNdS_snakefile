@@ -1,0 +1,72 @@
+rule all:
+    input:
+        diffs = "usher/trimmed/dn_ds_dstop_bootstrap.tsv",
+        diffs_degen = "usher/trimmed/dn_ds_dstop_bootstrap_4degenerate.tsv"
+
+rule setup_bootstrap:
+    input:
+        muts = "usher/trimmed/usher_translations.tsv"
+    output:
+        muts = "usher/trimmed/usher_mutTypes.tsv",
+    shell:
+        '''
+        python code/setup_bootstrap.py \
+            --muts {input.muts} \
+            --output {output.muts} \
+        '''
+
+rule run_bootstrap:
+    input:
+        muts = "usher/trimmed/usher_mutTypes.tsv",
+    params:
+        iterations = 10
+    output:
+        counts = "usher/trimmed/bootstrap/counts{iteration}.tsv",
+    shell:
+        '''
+        python code/run_bootstrap.py \
+            --muts {input.muts} \
+            --counts {output.counts} \
+            --size {params.iterations}
+        '''
+
+chunks = list(range(1000))
+
+rule combine_bootstrap:
+    input:
+        ref = "sars2_wS1_ref.gb",
+        muts = "usher/trimmed/usher_mutTypes.tsv",
+        counts = expand("usher/trimmed/bootstrap/counts{iteration}.tsv", iteration=chunks)
+    params:
+        ci = 95
+    output:
+        diffs = "usher/trimmed/dn_ds_dstop_bootstrap.tsv"
+    shell:
+        '''
+        python code/combine_bootstrap.py \
+            --ref {input.ref} \
+            --muts {input.muts} \
+            --ci {params.ci} \
+            --counts {input.counts} \
+            --diffs {output.diffs}
+        '''
+
+rule combine_bootstrap_degen:
+    input:
+        ref = "sars2_wS1_ref.gb",
+        muts = "usher/trimmed/usher_mutTypes.tsv",
+        counts = expand("usher/trimmed/bootstrap/counts{iteration}.tsv", iteration=chunks)
+    params:
+        ci = 95
+    output:
+        diffs = "usher/trimmed/dn_ds_dstop_bootstrap_4degenerate.tsv"
+    shell:
+        '''
+        python code/combine_bootstrap.py \
+            --ref {input.ref} \
+            --muts {input.muts} \
+            --ci {params.ci} \
+            --counts {input.counts} \
+            --degenerate \
+            --diffs {output.diffs}
+        '''

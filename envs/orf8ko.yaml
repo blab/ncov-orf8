@@ -1,0 +1,15 @@
+name: orf8ko
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - augur
+  - biopython
+  - matplotlib
+  - numpy
+  - pandas
+  - vcftools
+  - snakemake
+  - ipython
+  - seaborn

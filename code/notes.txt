@@ -1,5 +1,0 @@
-Downloaded all GISAID files on July 26, 2022 from private nextstrain bucket.
-
-Filtered to just those in Washington State.
-
-Aligned to sars2 reference using nextalign

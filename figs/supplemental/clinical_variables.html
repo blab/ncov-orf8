@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>body{background-color:white;}</style>
+<link href="data:text/css,%0A%2ERtable1%20table%2C%20table%2ERtable1%20%7B%0Afont%2Dfamily%3A%20%22Arial%22%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2010pt%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0Apadding%3A%200px%3B%0Amargin%3A%200px%3B%0A%0A%7D%0A%2ERtable1%20td%20%7B%0Awhite%2Dspace%3Anowrap%3B%0A%7D%0A%2ERtable1%20th%2C%20%2ERtable1%20td%20%7B%0Aborder%3A%200%3B%0Atext%2Dalign%3A%20center%3B%0Apadding%3A%200%2E5ex%201%2E5ex%3B%0Amargin%3A%200px%3B%0A%7D%0A%2ERtable1%20thead%3Etr%3Afirst%2Dchild%3Eth%20%7B%0Aborder%2Dtop%3A%202pt%20solid%20black%3B%0A%7D%0A%2ERtable1%20thead%3Etr%3Alast%2Dchild%3Eth%20%7B%0Aborder%2Dbottom%3A%201pt%20solid%20black%3B%0A%7D%0A%2ERtable1%20tbody%3Etr%3Alast%2Dchild%3Etd%20%7B%0Aborder%2Dbottom%3A%202pt%20solid%20black%3B%0A%7D%0A%2ERtable1%20th%2Egrouplabel%20%7B%0Apadding%2Dleft%3A%200%3B%0Apadding%2Dright%3A%200%3B%0A%7D%0A%2ERtable1%20th%2Egrouplabel%3Ediv%20%7B%0Amargin%2Dleft%3A%201%2E5ex%3B%0Amargin%2Dright%3A%201%2E5ex%3B%0Aborder%2Dbottom%3A%201pt%20solid%20black%3B%0A%7D%0A%2ERtable1%20th%2Egrouplabel%3Alast%2Dchild%3Ediv%20%7B%0Amargin%2Dright%3A%200%3B%0A%7D%0A%2ERtable1%20%2Erowlabel%20%7B%0Atext%2Dalign%3A%20left%3B%0Apadding%2Dleft%3A%202%2E5ex%3B%0A%7D%0A%2ERtable1%20%2Efirstrow%2Erowlabel%20%7B%0Apadding%2Dleft%3A%200%2E5ex%3B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0A%0A%2ERtable1%2Dzebra%20tbody%20tr%3Anth%2Dchild%28odd%29%20%7B%0Abackground%2Dcolor%3A%20%23eee%3B%0A%7D%0A%0Atable%2ERtable1%2Dtimes%20%7B%0Afont%2Dfamily%3A%20%22Times%20New%20Roman%22%2C%20Times%2C%20serif%3B%0A%7D%0A%0A%2ERtable1%2Dshade%20th%20%7B%0Abackground%2Dcolor%3A%20%23ccc%3B%0A%7D%0A%0A%2ERtable1%2Dgrid%20th%2C%20%2ERtable1%2Dgrid%20td%20%7B%0Aborder%2Dleft%3A%201pt%20solid%20black%3B%0Aborder%2Dright%3A%201pt%20solid%20black%3B%0A%7D%0A%2ERtable1%2Dgrid%20thead%3Etr%3Afirst%2Dchild%3Eth%20%7B%0Aborder%2Dtop%3A%201pt%20solid%20black%3B%0A%7D%0A%2ERtable1%2Dgrid%20thead%3Etr%3Alast%2Dchild%3Eth%20%7B%0Aborder%2Dbottom%3A%201pt%20solid%20black%3B%0A%7D%0A%2ERtable1%2Dgrid%20tbody%3Etr%3Alast%2Dchild%3Etd%20%7B%0Aborder%2Dbottom%3A%201pt%20solid%20black%3B%0A%7D%0A%2ERtable1%2Dgrid%20%2Efirstrow%2C%20%2ERtable1%2Dgrid%20%2Efirstrow%20%7E%20td%20%7B%0Aborder%2Dtop%3A%201pt%20solid%20black%3B%0A%7D%0A%2ERtable1%2Dgrid%20th%2Egrouplabel%3Ediv%20%7B%0Amargin%2Dleft%3A%200%3B%0Amargin%2Dright%3A%200%3B%0Aborder%2Dbottom%3A%200%3B%0A%7D%0A%0A%2ERtable1%2Dcenter%20td%2Erowlabel%2C%20%2ERtable1%2Dcenter%20td%2Efirstrow%2Erowlabel%20%7B%0Afont%2Dweight%3A%20bold%3B%0Atext%2Dalign%3A%20center%3B%0Apadding%3A%200%2E5ex%201%2E5ex%3B%0A%7D%0A%0A%2ERtable1%20%2ERtable1%2Dfootnote%20%7B%0Afont%2Dsize%3A%20smaller%3B%0Apadding%3A%200px%3B%0Amargin%3A%200px%3B%0Atext%2Dalign%3A%20left%3B%0Awhite%2Dspace%3A%20normal%3B%0A%7D%0A" rel="stylesheet" />
+
+</head>
+<body>
+<div class="Rtable1"><table class="Rtable1-grid">
+<thead>
+<tr>
+<th class="rowlabel firstrow lastrow"></th>
+<th class="firstrow lastrow"><span class="stratlabel">ORF8 intact<br><span class="stratn">(N=49912)</span></span></th>
+<th class="firstrow lastrow"><span class="stratlabel">ORF8 knockout<br><span class="stratn">(N=10089)</span></span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Overall<br><span class="stratn">(N=60001)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rowlabel firstrow">Hospitalized?</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">No</td>
+<td>21022 (42.1%)</td>
+<td>5363 (53.2%)</td>
+<td>26385 (44.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">Yes</td>
+<td>1906 (3.8%)</td>
+<td>383 (3.8%)</td>
+<td>2289 (3.8%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">26984 (54.1%)</td>
+<td class="lastrow">4343 (43.0%)</td>
+<td class="lastrow">31327 (52.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Died?</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">No</td>
+<td>49002 (98.2%)</td>
+<td>9960 (98.7%)</td>
+<td>58962 (98.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">Yes</td>
+<td class="lastrow">910 (1.8%)</td>
+<td class="lastrow">129 (1.3%)</td>
+<td class="lastrow">1039 (1.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Variant of concern?</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">No</td>
+<td>10601 (21.2%)</td>
+<td>593 (5.9%)</td>
+<td>11194 (18.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">Yes</td>
+<td class="lastrow">39311 (78.8%)</td>
+<td class="lastrow">9496 (94.1%)</td>
+<td class="lastrow">48807 (81.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Age group</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">0-4</td>
+<td>1785 (3.6%)</td>
+<td>431 (4.3%)</td>
+<td>2216 (3.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel">5-17</td>
+<td>7439 (14.9%)</td>
+<td>1887 (18.7%)</td>
+<td>9326 (15.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">18-44</td>
+<td>22675 (45.4%)</td>
+<td>5006 (49.6%)</td>
+<td>27681 (46.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">45-64</td>
+<td>9677 (19.4%)</td>
+<td>1887 (18.7%)</td>
+<td>11564 (19.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">65-79</td>
+<td>3239 (6.5%)</td>
+<td>448 (4.4%)</td>
+<td>3687 (6.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">80+</td>
+<td>992 (2.0%)</td>
+<td>112 (1.1%)</td>
+<td>1104 (1.8%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">4105 (8.2%)</td>
+<td class="lastrow">318 (3.2%)</td>
+<td class="lastrow">4423 (7.4%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Sex assigned at birth</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">Female</td>
+<td>22199 (44.5%)</td>
+<td>4730 (46.9%)</td>
+<td>26929 (44.9%)</td>
+</tr>
+<tr>
+<td class="rowlabel">Male</td>
+<td>22757 (45.6%)</td>
+<td>4890 (48.5%)</td>
+<td>27647 (46.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">Other</td>
+<td>49 (0.1%)</td>
+<td>13 (0.1%)</td>
+<td>62 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">4907 (9.8%)</td>
+<td class="lastrow">456 (4.5%)</td>
+<td class="lastrow">5363 (8.9%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Vaccinated</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">No</td>
+<td>37146 (74.4%)</td>
+<td>8957 (88.8%)</td>
+<td>46103 (76.8%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">Yes</td>
+<td class="lastrow">12766 (25.6%)</td>
+<td class="lastrow">1132 (11.2%)</td>
+<td class="lastrow">13898 (23.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Year Epiweek</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">2020_23</td>
+<td>339 (0.7%)</td>
+<td>9 (0.1%)</td>
+<td>348 (0.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_24</td>
+<td>319 (0.6%)</td>
+<td>12 (0.1%)</td>
+<td>331 (0.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_25</td>
+<td>309 (0.6%)</td>
+<td>12 (0.1%)</td>
+<td>321 (0.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_26</td>
+<td>189 (0.4%)</td>
+<td>7 (0.1%)</td>
+<td>196 (0.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_27</td>
+<td>151 (0.3%)</td>
+<td>1 (0.0%)</td>
+<td>152 (0.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_28</td>
+<td>16 (0.0%)</td>
+<td>1 (0.0%)</td>
+<td>17 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_29</td>
+<td>19 (0.0%)</td>
+<td>1 (0.0%)</td>
+<td>20 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_30</td>
+<td>26 (0.1%)</td>
+<td>0 (0%)</td>
+<td>26 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_31</td>
+<td>56 (0.1%)</td>
+<td>3 (0.0%)</td>
+<td>59 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_32</td>
+<td>282 (0.6%)</td>
+<td>4 (0.0%)</td>
+<td>286 (0.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_33</td>
+<td>161 (0.3%)</td>
+<td>7 (0.1%)</td>
+<td>168 (0.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_34</td>
+<td>50 (0.1%)</td>
+<td>0 (0%)</td>
+<td>50 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_35</td>
+<td>20 (0.0%)</td>
+<td>0 (0%)</td>
+<td>20 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_36</td>
+<td>67 (0.1%)</td>
+<td>10 (0.1%)</td>
+<td>77 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_37</td>
+<td>41 (0.1%)</td>
+<td>5 (0.0%)</td>
+<td>46 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_38</td>
+<td>32 (0.1%)</td>
+<td>4 (0.0%)</td>
+<td>36 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_39</td>
+<td>18 (0.0%)</td>
+<td>0 (0%)</td>
+<td>18 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_40</td>
+<td>43 (0.1%)</td>
+<td>2 (0.0%)</td>
+<td>45 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_41</td>
+<td>40 (0.1%)</td>
+<td>1 (0.0%)</td>
+<td>41 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_42</td>
+<td>52 (0.1%)</td>
+<td>0 (0%)</td>
+<td>52 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_43</td>
+<td>66 (0.1%)</td>
+<td>4 (0.0%)</td>
+<td>70 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_44</td>
+<td>75 (0.2%)</td>
+<td>4 (0.0%)</td>
+<td>79 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_45</td>
+<td>47 (0.1%)</td>
+<td>6 (0.1%)</td>
+<td>53 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_46</td>
+<td>121 (0.2%)</td>
+<td>4 (0.0%)</td>
+<td>125 (0.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_47</td>
+<td>120 (0.2%)</td>
+<td>21 (0.2%)</td>
+<td>141 (0.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_48</td>
+<td>111 (0.2%)</td>
+<td>20 (0.2%)</td>
+<td>131 (0.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_49</td>
+<td>115 (0.2%)</td>
+<td>4 (0.0%)</td>
+<td>119 (0.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_50</td>
+<td>180 (0.4%)</td>
+<td>2 (0.0%)</td>
+<td>182 (0.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_51</td>
+<td>59 (0.1%)</td>
+<td>6 (0.1%)</td>
+<td>65 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_52</td>
+<td>141 (0.3%)</td>
+<td>12 (0.1%)</td>
+<td>153 (0.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2020_53</td>
+<td>110 (0.2%)</td>
+<td>11 (0.1%)</td>
+<td>121 (0.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_1</td>
+<td>232 (0.5%)</td>
+<td>19 (0.2%)</td>
+<td>251 (0.4%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_10</td>
+<td>222 (0.4%)</td>
+<td>29 (0.3%)</td>
+<td>251 (0.4%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_11</td>
+<td>277 (0.6%)</td>
+<td>43 (0.4%)</td>
+<td>320 (0.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_12</td>
+<td>289 (0.6%)</td>
+<td>99 (1.0%)</td>
+<td>388 (0.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_13</td>
+<td>261 (0.5%)</td>
+<td>58 (0.6%)</td>
+<td>319 (0.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_14</td>
+<td>345 (0.7%)</td>
+<td>212 (2.1%)</td>
+<td>557 (0.9%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_15</td>
+<td>525 (1.1%)</td>
+<td>488 (4.8%)</td>
+<td>1013 (1.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_16</td>
+<td>717 (1.4%)</td>
+<td>967 (9.6%)</td>
+<td>1684 (2.8%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_17</td>
+<td>766 (1.5%)</td>
+<td>1390 (13.8%)</td>
+<td>2156 (3.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_18</td>
+<td>496 (1.0%)</td>
+<td>1108 (11.0%)</td>
+<td>1604 (2.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_19</td>
+<td>513 (1.0%)</td>
+<td>959 (9.5%)</td>
+<td>1472 (2.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_2</td>
+<td>230 (0.5%)</td>
+<td>24 (0.2%)</td>
+<td>254 (0.4%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_20</td>
+<td>419 (0.8%)</td>
+<td>630 (6.2%)</td>
+<td>1049 (1.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_21</td>
+<td>443 (0.9%)</td>
+<td>490 (4.9%)</td>
+<td>933 (1.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_22</td>
+<td>342 (0.7%)</td>
+<td>346 (3.4%)</td>
+<td>688 (1.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_23</td>
+<td>350 (0.7%)</td>
+<td>324 (3.2%)</td>
+<td>674 (1.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_24</td>
+<td>311 (0.6%)</td>
+<td>280 (2.8%)</td>
+<td>591 (1.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_25</td>
+<td>416 (0.8%)</td>
+<td>213 (2.1%)</td>
+<td>629 (1.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_26</td>
+<td>381 (0.8%)</td>
+<td>110 (1.1%)</td>
+<td>491 (0.8%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_27</td>
+<td>658 (1.3%)</td>
+<td>99 (1.0%)</td>
+<td>757 (1.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_28</td>
+<td>965 (1.9%)</td>
+<td>129 (1.3%)</td>
+<td>1094 (1.8%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_29</td>
+<td>1462 (2.9%)</td>
+<td>111 (1.1%)</td>
+<td>1573 (2.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_3</td>
+<td>362 (0.7%)</td>
+<td>23 (0.2%)</td>
+<td>385 (0.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_30</td>
+<td>2276 (4.6%)</td>
+<td>110 (1.1%)</td>
+<td>2386 (4.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_31</td>
+<td>1919 (3.8%)</td>
+<td>97 (1.0%)</td>
+<td>2016 (3.4%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_32</td>
+<td>2325 (4.7%)</td>
+<td>104 (1.0%)</td>
+<td>2429 (4.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_33</td>
+<td>2966 (5.9%)</td>
+<td>174 (1.7%)</td>
+<td>3140 (5.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_34</td>
+<td>2030 (4.1%)</td>
+<td>77 (0.8%)</td>
+<td>2107 (3.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_35</td>
+<td>1780 (3.6%)</td>
+<td>73 (0.7%)</td>
+<td>1853 (3.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_36</td>
+<td>2503 (5.0%)</td>
+<td>132 (1.3%)</td>
+<td>2635 (4.4%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_37</td>
+<td>1090 (2.2%)</td>
+<td>42 (0.4%)</td>
+<td>1132 (1.9%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_38</td>
+<td>1328 (2.7%)</td>
+<td>50 (0.5%)</td>
+<td>1378 (2.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_39</td>
+<td>1641 (3.3%)</td>
+<td>90 (0.9%)</td>
+<td>1731 (2.9%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_4</td>
+<td>344 (0.7%)</td>
+<td>14 (0.1%)</td>
+<td>358 (0.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_40</td>
+<td>1191 (2.4%)</td>
+<td>80 (0.8%)</td>
+<td>1271 (2.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_41</td>
+<td>1304 (2.6%)</td>
+<td>63 (0.6%)</td>
+<td>1367 (2.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_42</td>
+<td>1630 (3.3%)</td>
+<td>69 (0.7%)</td>
+<td>1699 (2.8%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_43</td>
+<td>1256 (2.5%)</td>
+<td>54 (0.5%)</td>
+<td>1310 (2.2%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_44</td>
+<td>926 (1.9%)</td>
+<td>27 (0.3%)</td>
+<td>953 (1.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_45</td>
+<td>1238 (2.5%)</td>
+<td>34 (0.3%)</td>
+<td>1272 (2.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_46</td>
+<td>1144 (2.3%)</td>
+<td>44 (0.4%)</td>
+<td>1188 (2.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_47</td>
+<td>754 (1.5%)</td>
+<td>44 (0.4%)</td>
+<td>798 (1.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_48</td>
+<td>1477 (3.0%)</td>
+<td>100 (1.0%)</td>
+<td>1577 (2.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_49</td>
+<td>1148 (2.3%)</td>
+<td>57 (0.6%)</td>
+<td>1205 (2.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_5</td>
+<td>543 (1.1%)</td>
+<td>24 (0.2%)</td>
+<td>567 (0.9%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_50</td>
+<td>859 (1.7%)</td>
+<td>41 (0.4%)</td>
+<td>900 (1.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_51</td>
+<td>250 (0.5%)</td>
+<td>16 (0.2%)</td>
+<td>266 (0.4%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_52</td>
+<td>163 (0.3%)</td>
+<td>13 (0.1%)</td>
+<td>176 (0.3%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_53</td>
+<td>21 (0.0%)</td>
+<td>3 (0.0%)</td>
+<td>24 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_6</td>
+<td>274 (0.5%)</td>
+<td>11 (0.1%)</td>
+<td>285 (0.5%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_7</td>
+<td>201 (0.4%)</td>
+<td>37 (0.4%)</td>
+<td>238 (0.4%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_8</td>
+<td>336 (0.7%)</td>
+<td>50 (0.5%)</td>
+<td>386 (0.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2021_9</td>
+<td>389 (0.8%)</td>
+<td>17 (0.2%)</td>
+<td>406 (0.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_1</td>
+<td>70 (0.1%)</td>
+<td>9 (0.1%)</td>
+<td>79 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_10</td>
+<td>4 (0.0%)</td>
+<td>0 (0%)</td>
+<td>4 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_11</td>
+<td>2 (0.0%)</td>
+<td>0 (0%)</td>
+<td>2 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_13</td>
+<td>2 (0.0%)</td>
+<td>1 (0.0%)</td>
+<td>3 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_15</td>
+<td>2 (0.0%)</td>
+<td>0 (0%)</td>
+<td>2 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_16</td>
+<td>3 (0.0%)</td>
+<td>0 (0%)</td>
+<td>3 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_17</td>
+<td>2 (0.0%)</td>
+<td>0 (0%)</td>
+<td>2 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_18</td>
+<td>2 (0.0%)</td>
+<td>1 (0.0%)</td>
+<td>3 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_19</td>
+<td>8 (0.0%)</td>
+<td>0 (0%)</td>
+<td>8 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_2</td>
+<td>46 (0.1%)</td>
+<td>0 (0%)</td>
+<td>46 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_20</td>
+<td>13 (0.0%)</td>
+<td>0 (0%)</td>
+<td>13 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_21</td>
+<td>3 (0.0%)</td>
+<td>0 (0%)</td>
+<td>3 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_22</td>
+<td>6 (0.0%)</td>
+<td>1 (0.0%)</td>
+<td>7 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_23</td>
+<td>4 (0.0%)</td>
+<td>0 (0%)</td>
+<td>4 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_24</td>
+<td>3 (0.0%)</td>
+<td>0 (0%)</td>
+<td>3 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_25</td>
+<td>6 (0.0%)</td>
+<td>0 (0%)</td>
+<td>6 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_26</td>
+<td>1 (0.0%)</td>
+<td>0 (0%)</td>
+<td>1 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_3</td>
+<td>11 (0.0%)</td>
+<td>0 (0%)</td>
+<td>11 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_30</td>
+<td>3 (0.0%)</td>
+<td>2 (0.0%)</td>
+<td>5 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_4</td>
+<td>33 (0.1%)</td>
+<td>2 (0.0%)</td>
+<td>35 (0.1%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_5</td>
+<td>6 (0.0%)</td>
+<td>0 (0%)</td>
+<td>6 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_52</td>
+<td>6 (0.0%)</td>
+<td>0 (0%)</td>
+<td>6 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_7</td>
+<td>1 (0.0%)</td>
+<td>0 (0%)</td>
+<td>1 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_8</td>
+<td>2 (0.0%)</td>
+<td>0 (0%)</td>
+<td>2 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel">2022_9</td>
+<td>10 (0.0%)</td>
+<td>0 (0%)</td>
+<td>10 (0.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">2022_28</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">2 (0.0%)</td>
+<td class="lastrow">2 (0.0%)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</body>
+</html>

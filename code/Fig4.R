@@ -9,10 +9,10 @@ library(table1)
 
 setwd("~/Work/projects/covid/long-deletions")
 ## Read in SARS2 ORF8 dataset
-ko <- read_tsv("results/gisaid.washington_ko_meta.tsv")
-clustersAlpha <- read_tsv("nextstrain_helper/results/Alpha/clusters/clusters_ORF8.tsv")
-clustersDelta <- read_tsv("nextstrain_helper/results/Delta/clusters/clusters_ORF8.tsv")
-clustersOther <- read_tsv("nextstrain_helper/results/WA_other/clusters/clusters_ORF8.tsv")
+ko <- read_tsv("wa_results/gisaid.washington_ko_meta.tsv")
+clustersAlpha <- read_tsv("nextstrain_build/results/Alpha/clusters/clusters_ORF8.tsv")
+clustersDelta <- read_tsv("nextstrain_build/results/Delta/clusters/clusters_ORF8.tsv")
+clustersOther <- read_tsv("nextstrain_build/results/WA_other/clusters/clusters_ORF8.tsv")
 wdrs <- read_csv("data/wdrs_metadata_9.2.22.csv")
 
 ## Generate cluster size
@@ -368,6 +368,10 @@ summary(hosp11)
 hosp12 <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth + vaccinated + VOC + moyr,family = binomial, data = df_hosp)
 summary(hosp12)
 
+hosp13 <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth + vaccinated + wkyr + VOC,family = binomial, data = df_hosp[df_hosp$Nextstrain_clade!='20I (Alpha, V1)',])
+summary(hosp13)
+## A lot of signal is coming from Alpha
+
 cbind(OR = exp(hosp11$coefficients[2:6]), exp(confint(hosp11,parm=c("ORF8_koYes","age_group","sex_at_birthMale","vaccinatedyes","VOCYes"))))
 
 
@@ -518,6 +522,10 @@ summary(death3)
 
 death4 <- glm(died ~ ORF8_ko + age_group + sex_at_birth + vaccinated + VOC + wkyr, family = "binomial", data = df_death)
 summary(death4)
+
+death5<- glm(died ~ ORF8_ko + age_group + sex_at_birth + vaccinated + wkyr,family = binomial, data = df_death[df_death$Nextstrain_clade!='20I (Alpha, V1)',])
+summary(death5)
+## Lose effect if you eliminate Alpha, but not enough power?
 
 cbind(OR = exp(death4$coefficients[2:6]), exp(confint(death4,parm=c("ORF8_koYes","age_group","sex_at_birthMale","vaccinatedyes","VOCYes"))))
 

@@ -7,9 +7,9 @@ library(ggpubr)
 setwd("~/Work/projects/covid/long-deletions")
 
 # Read in SARS2 ORF8 dataset
-df <- read_tsv("results/gisaid.washington_ko_meta.tsv")
-df_gb <- read_tsv("results/genbank_wa_ko_meta.tsv")
-clust <-read_tsv("nextstrain_helper/results/WA_20k/clusters/clusters_ORF8.tsv")
+df <- read_tsv("wa_results/gisaid.washington_ko_meta.tsv")
+df_gb <- read_tsv("wa_results/genbank_wa_ko_meta.tsv")
+clust <-read_tsv("nextstrain_build/results/WA_20k/clusters/clusters_ORF8.tsv")
 df <- df %>%
   mutate(ORF8_koType = ifelse(is.na(ORF8_koType),'None', ORF8_koType))
 

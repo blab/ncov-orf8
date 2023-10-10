@@ -10,7 +10,7 @@ In this manuscript, we built 5 different SARS-CoV-2 nextstrain trees:
 To build the trees, [install the ncov workflow](https://docs.nextstrain.org/projects/ncov/en/latest/tutorial/setup.html) and copy the `orf8ko_profiles` folder into the `ncov` directory.
 Run the workflow from inside the `ncov` directory using the below command:
 ```
-nextstrain build . --configfile orf8ko_profiles/orf8ko_builds.yaml.
+nextstrain build . --configfile orf8ko_profiles/orf8ko_builds.yaml
 ```
 
 `results` contains the knockout clusters for each gene inferred for each tree. 

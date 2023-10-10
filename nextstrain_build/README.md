@@ -1,4 +1,4 @@
-### Nextstrain builds for ORF8 KO
+## Nextstrain builds for ORF8 KO
 In this manuscript, we built 5 different SARS-CoV-2 nextstrain trees:
 - [WA_20k](https://nextstrain.org/groups/blab/ncov/WA/20k), which is enriched for WA sequences and evenly sampled across time.
 - [Alpha](https://nextstrain.org/groups/blab/ncov/WA/Alpha), an Alpha specific phylogeny enriched for potential ORF8 knockouts in WA.

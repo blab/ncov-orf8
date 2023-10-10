@@ -9,70 +9,12 @@ library(table1)
 
 setwd("~/Work/projects/covid/long-deletions")
 ## Read in SARS2 ORF8 dataset
-ko <- read_tsv("wa_results/gisaid.washington_ko_meta.tsv")
-clustersAlpha <- read_tsv("nextstrain_build/results/Alpha/clusters/clusters_ORF8.tsv")
-clustersDelta <- read_tsv("nextstrain_build/results/Delta/clusters/clusters_ORF8.tsv")
-clustersOther <- read_tsv("nextstrain_build/results/WA_other/clusters/clusters_ORF8.tsv")
-wdrs <- read_csv("data/wdrs_metadata_9.2.22.csv")
+df <- read_tsv("wa_results/clinical_combined.tsv")
 
-## Generate cluster size
-Alpha_size <- clustersAlpha %>% group_by(cluster) %>%
-  add_count() %>%
-  ungroup %>%
-  rename(clusterSize = n) %>%
-  dplyr::select(strain,clusterSize)
-
-Delta_size <- clustersDelta %>% group_by(cluster) %>%
-  add_count() %>%
-  ungroup %>%
-  rename(clusterSize = n) %>%
-  dplyr::select(strain,clusterSize)
-
-Other_size <- clustersOther %>% group_by(cluster) %>%
-  add_count() %>%
-  ungroup %>%
-  rename(clusterSize = n) %>%
-  dplyr::select(strain,clusterSize)
-
-size <- Alpha_size %>%
-  bind_rows(Delta_size) %>%
-  bind_rows(Other_size)
-
-
-not_in_wdrs <- ko %>%
-  anti_join(wdrs, by = c("strain" = "gisaid_id"))
-not_in_wdrs %>%
-  select(submitting_lab) %>%
-  distinct() %>%
-  print(n=100)
-wa_not_in_wdrs <- not_in_wdrs %>%
-  filter(str_detect(submitting_lab, "Washington|UW|Seattle|Fred Hutch|Atlas|Altius"))
-# There are ~30,000 WA samples not in WDRS
-
-wa_not_in_wdrs %>%
-  ggplot(aes(x=date)) +
-  geom_histogram()
-## Many of these are after mid-2022 when the data was pulled. But there are ones
-## missing from earlier. Oh well.
-
-
-
-not_in_koin_wdrs <- wdrs %>%
-  anti_join(ko, by = c("gisaid_id" = "strain"))
-# There's 2152 samples in wdrs, not in metadata/ko. Maybe these were culled
-# because there coverage was too low..
-
-## Combine WDRS, cluster size, and KO info
-df <- ko %>%
-  inner_join(wdrs, by = c("strain" = "gisaid_id")) %>%
-  left_join(size, by = c("strain")) %>%
-  mutate(epiweek = epiweek(date)) %>%
-  mutate(year = year(date)) %>%
-  mutate(month = month(date)) %>%
-  unite(wkyr, year,epiweek, remove=FALSE) %>%
-  unite(moyr,month,year,remove=FALSE)
 
 df$age_group = fct_relevel(df$age_group, "0-4", "5-17", "18-44", "45-64", "65-79", "80+")
+
+
 
 ## Plot distribution of potential predictors by ORF8_ko
 # Sex at birth
@@ -91,7 +33,7 @@ df %>%
   filter(!is.na(age_group)) %>%
   ggplot(aes(ORF8_ko, color=age_group,fill=age_group)) +
   geom_bar(position="fill")
-# There are younger people on average with the ko, than without. 
+# There are younger people on average with the ko, than without.
 # May be due to variant/timing bias... But interesting...
 
 # Age without omicron
@@ -100,7 +42,7 @@ df %>%
   filter(!grepl('Omicron',Nextstrain_clade)) %>%
   ggplot(aes(ORF8_ko, color=age_group,fill=age_group)) +
   geom_bar(position="fill")
-## Even more age skewed without Omicron 
+## Even more age skewed without Omicron
 
 ## without alpaha
 df %>%
@@ -117,22 +59,12 @@ df %>%
 
 
 ## Vaccines
-df <- df %>%
-  mutate(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_1 = as_date(ifelse(difftime(date,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_1, units="days") < 14, NA, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_1))) %>%
-  mutate(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_2 = as_date(ifelse(difftime(date,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_2, units="days") < 14, NA, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_2))) %>%
-  mutate(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_3 = as_date(ifelse(difftime(date,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_3, units="days") < 14, NA, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_3))) %>%
-  mutate(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_4 = as_date(ifelse(difftime(date,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_4, units="days") < 14, NA, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_4))) %>%
-  mutate(last_vaccination = pmax(IIS_VACCINE_INFORMATION_AVAILABLE_DATE_1,IIS_VACCINE_INFORMATION_AVAILABLE_DATE_2, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_3, IIS_VACCINE_INFORMATION_AVAILABLE_DATE_4, na.rm=TRUE)) %>%
-  mutate(days_since_vaccination = difftime(date, last_vaccination, units="days")) %>%
-  mutate(vaccinated = ifelse(is.na(days_since_vaccination), "no", "yes"))
-# Vaccine is eliminated if received less than 14 days ago. After elimination, 
-# calculates day since last vaccine was given.
 df %>%
   #filter(Nextstrain_clade != "20I (Alpha, V1)") %>%
   filter(!is.na(ORF8_ko)) %>%
   ggplot(aes(days_since_vaccination,color=ORF8_ko,fill=ORF8_ko,)) +
   geom_histogram(aes(y=0.5*..density..),alpha=0.5,position='identity')
-# For ORF8KO, people seem to have slightly fewer days since vacccination. 
+# For ORF8KO, people seem to have slightly fewer days since vacccination.
 # Should consider adding in time since shot as a continuous variable...
 
 ## Hospital
@@ -150,7 +82,7 @@ df %>%
   xlab('ORF8 KO') +
   ylab('Proportion') +
   scale_fill_manual(values=c('#457b9d','#14213d','#8d99ae'),name='Hospitalized?') +
-  scale_color_manual(values=c('#457b9d','#14213d','#8d99ae'),name='Hospitalized?') 
+  scale_color_manual(values=c('#457b9d','#14213d','#8d99ae'),name='Hospitalized?')
   #scale_fill_manual(values=c('#457b9d','#14213d'),name='Hospitalized?') +
   #scale_color_manual(values=c('#457b9d','#14213d'),name='Hospitalized?')
 ggsave('figs/hosp_bars.pdf',dpi=300,height=3,width=3)
@@ -160,7 +92,7 @@ hosp.2way <- df %>%
   filter(hosp!='Unknown') %>%
   filter(!grepl("Omicron",Nextstrain_clade)) %>%
   filter(!is.na(ORF8_ko)) %>%
-  filter(!is.na(hosp)) %>% 
+  filter(!is.na(hosp)) %>%
   with(table(hosp, ORF8_ko)) %>% prop.table(margin=2) %>%
   as_tibble()
 
@@ -168,20 +100,18 @@ df %>%
   filter(hosp!='Unknown') %>%
   filter(!grepl("Omicron",Nextstrain_clade)) %>%
   filter(!is.na(ORF8_ko)) %>%
-  filter(!is.na(hosp)) %>% 
-  with(table(hosp, ORF8_ko)) 
+  filter(!is.na(hosp)) %>%
+  with(table(hosp, ORF8_ko))
 
 hosp.2way.mat <- df %>%
   filter(!grepl("Omicron",Nextstrain_clade)) %>%
   filter(!is.na(ORF8_ko)) %>%
-  filter(!is.na(hosp)) %>% 
+  filter(!is.na(hosp)) %>%
   filter(hosp!='Unknown') %>%
   with(table(hosp, ORF8_ko))
 
 
 ## Death
-df <- df %>%
-  mutate(died = ifelse(is.na(death_date), "No", "Yes"))
 
 df$died = as_factor(df$died)
 df$died = fct_relevel(df$died, "No", "Yes")
@@ -197,7 +127,7 @@ df %>%
   xlab('ORF8 KO') +
   ylab('Proportion') +
   scale_fill_manual(values=c('#457b9d','#14213d'),name='Death due to\nSARS-CoV-2?') +
-  scale_color_manual(values=c('#457b9d','#14213d'),name='Death due to\nSARS-CoV-2?') 
+  scale_color_manual(values=c('#457b9d','#14213d'),name='Death due to\nSARS-CoV-2?')
 #scale_fill_manual(values=c('#457b9d','#14213d'),name='Hospitalized?') +
 #scale_color_manual(values=c('#457b9d','#14213d'),name='Hospitalized?')
 ggsave('figs/death_bars.pdf',dpi=300,height=3,width=3)
@@ -249,7 +179,7 @@ clin.prop
 ggsave('figs/fig4/proportions_clinical.pdf',dpi=300,height=3.5,width=3)
 
 ## Table
-no_omicron <- df %>% 
+no_omicron <- df %>%
   filter(!grepl("Omicron",Nextstrain_clade)) %>%
   mutate(vaccinated = ifelse(vaccinated=='no','No','Yes')) %>%
   mutate(ORF8_ko = ifelse(ORF8_ko == 'Yes', 'ORF8 knockout','ORF8 intact')) %>%
@@ -289,11 +219,11 @@ HospRegression = function(df, x) {
     #mutate(KO = ifelse(ORF8_ko == 'Yes', 'Yes','No'))
   df_hosp$age_group = as.numeric(df_hosp$age_group)
   df_hosp$hosp = as.factor(df_hosp$hosp)
-  
-  
+
+
   reg1 <- glm(hosp ~ KO+ age_group + sex_at_birth + vaccinated + VOC + wkyr, family = "binomial", data = df_hosp)
   #print(summary(reg1))
-  
+
   or_hosp = cbind(OR = exp(reg1$coefficients[2:6]), exp(confint(reg1,parm=c("KOYes","age_group","sex_at_birthMale","vaccinatedyes","VOCYes"))))
 
   results = list(or_hosp,reg1$aic)
@@ -312,7 +242,7 @@ df_vaxx <- df %>%
   filter(coverage>= 0.95)
 df_vaxx$age_group = as.numeric(df_vaxx$age_group)
 df_vaxx$hosp = as.factor(df_vaxx$hosp)
-  
+
 vax1 <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth + days_since_vaccination, family = "binomial", data = df_vaxx)
 print(summary(vax1))
 vax2 <- glm(hosp ~ ORF8_ko + age_group + sex_at_birth, family = "binomial", data = df_vaxx)
@@ -407,7 +337,7 @@ DeathRegression = function(df,x) {
   filter(age_group != "Unknown") %>%
   filter(!is.na(age_group)) %>%
   filter(!is.na(ORF8_ko)) %>%
-  filter(!is.na(died)) %>% 
+  filter(!is.na(died)) %>%
   filter(sex_at_birth != 'Other') %>%
   filter(!grepl("Omicron",Nextstrain_clade)) %>%
   filter(coverage>= 0.95) %>%
@@ -416,16 +346,16 @@ DeathRegression = function(df,x) {
   mutate(KO = ifelse(ORF8_ko == 'Yes' & clusterSize>x, 'Yes','No')) %>%
     mutate(VOC = if_else(grepl("Alpha",Nextstrain_clade)|grepl("Delta",Nextstrain_clade)|grepl("Beta",Nextstrain_clade)|grepl("Gamma",Nextstrain_clade),"Yes","No"))
   df_death$age_group = as.numeric(df_death$age_group)
-  df_death$died = fct_relevel(df_death$died, "No", "Yes") 
-  
+  df_death$died = fct_relevel(df_death$died, "No", "Yes")
+
   reg2 <- glm(died ~ KO + age_group + sex_at_birth + vaccinated + VOC + wkyr, family = "binomial", data = df_death)
   #print(summary(reg2))
-  
+
   or_death = cbind(OR = exp(reg2$coefficients[2:6]), exp(confint(reg2,parm=c("KOYes","age_group","sex_at_birthMale","vaccinatedyes","VOCYes"))))
 
   results = list(or_death, reg2$aic)
   return(results)
-}  
+}
 
 HospRegression(df,1)
 
@@ -460,7 +390,7 @@ odds_cluster <- effect %>%
   ylab('Odds ratio for ORF8 knockout') +
   xlab('') +
   theme_minimal() +
-  theme(axis.ticks.x = element_blank(), axis.text.x=element_blank(), 
+  theme(axis.ticks.x = element_blank(), axis.text.x=element_blank(),
         legend.position = 'top',legend.title=element_blank()) +
   xlim(0,50)
 
@@ -485,7 +415,7 @@ aic_cluster <-effect %>%
     axis.title.y.right = element_text(color = "#14213d")
   ) +
   xlim(0,50)
-    
+
 
 aic_cluster
 
@@ -501,7 +431,7 @@ df_death <- df %>%
   filter(age_group != "Unknown") %>%
   filter(!is.na(age_group)) %>%
   filter(!is.na(ORF8_ko)) %>%
-  filter(!is.na(died)) %>% 
+  filter(!is.na(died)) %>%
   filter(sex_at_birth != 'Other') %>%
   filter(!grepl("Omicron",Nextstrain_clade)) %>%
   filter(coverage>= 0.95) %>%
@@ -581,10 +511,3 @@ odds_both_no_legend <- odds_both + theme(legend.position='none')
 ggarrange(clin.prop,odds_both_no_legend,labels=c('A','B'),widths=c(0.5,1))#,common.legend=TRUE,legend='bottom')
 ggsave('figs/fig4/fig4_time.pdf',dpi=300,height=3,width=6.5)
 ggsave('figs/fig4/fig4_time.jpg',dpi=300,height=3,width=6.5,bg='white')
-
-
-
-
-
-
-

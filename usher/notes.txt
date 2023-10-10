@@ -1,1 +1,3 @@
-Trimmed tree of all samples without dates
+Trimmed tree of all samples without dates using the following:
+
+matUtils extract -i public-2023-05-01.all.masked.pb.gz -s include.txt -o trimmed/trimmed_2023-05-01.all.pb.gz

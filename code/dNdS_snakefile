@@ -1,3 +1,7 @@
+## To run this workflow:
+## First, generate `usher/trimmed/usher_translations.tsv` using matUtils summary --translate
+## Then run analysis in main directory using `snakemake code/dNdS_snakefile`
+
 rule all:
     input:
         diffs = "usher/trimmed/dn_ds_dstop_bootstrap.tsv",
@@ -34,7 +38,7 @@ chunks = list(range(1000))
 
 rule combine_bootstrap:
     input:
-        ref = "sars2_wS1_ref.gb",
+        ref = "params/sars2_wS1_ref.gb",
         muts = "usher/trimmed/usher_mutTypes.tsv",
         counts = expand("usher/trimmed/bootstrap/counts{iteration}.tsv", iteration=chunks)
     params:
@@ -53,7 +57,7 @@ rule combine_bootstrap:
 
 rule combine_bootstrap_degen:
     input:
-        ref = "sars2_wS1_ref.gb",
+        ref = "params/sars2_wS1_ref.gb",
         muts = "usher/trimmed/usher_mutTypes.tsv",
         counts = expand("usher/trimmed/bootstrap/counts{iteration}.tsv", iteration=chunks)
     params:

@@ -56,3 +56,12 @@ install.packages("renv")
 renv::restore(lockfile = 'envs/renv.lock')
 ```
 This process should take a few minutes.
+
+#### Running the analyses
+- Run `code/find_ko.py` on .fasta alignment of WA sequences to call potential gene knockouts. See above to access sequences and metadata from GISAID.
+- Build and call transmission clusters using `nextstrain_build`
+- Calculate dN/dS using the snakemake workflow: `code/dNdS_snakefile`. See above to download the UShER tree for this analysis.
+- Call mutation clusters from UShER tree using `code/getMutationClusters.py`
+- Model cluster growth rates using: `code/clusterSize_regression.R`
+- `code/combineClinicalData.R` is used to generate the dataframe for clinical analysis.
+- Use `code/Fig4.R` to run the clinical severity analysis. Although we cannot share clinical data to protect patient privacy, we have provided `data/clinical_example.tsv` as a demo dataset.

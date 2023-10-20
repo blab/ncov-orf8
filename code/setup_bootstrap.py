@@ -10,8 +10,42 @@ import argparse
 #import os
 import pandas as pd
 import numpy as np
+from Bio import Phylo
 
-def make_mutations_df(path):
+def load_dates(path):
+    df = pd.read_csv(path,sep='\t',usecols=['strain','date'],compression='gzip')
+    df = df[~df.date.isna()]
+    df = df[~df.date.str.contains('?',regex=False)]
+    df['date'] = pd.to_datetime(df['date'])
+    df.set_index('strain',inplace=True)
+    return df
+
+def tabulate_names(tree):
+    names = {}
+    for idx, clade in enumerate(tree.find_clades()):
+        if not clade.name:
+            clade.name = str(idx)
+        names[clade.name] = clade
+    return names
+
+def get_leaves(node, named):
+    leaves = named[node].get_terminals()
+    names = [leaf.name for leaf in leaves]
+    return names
+
+def get_time(node,named,date_df):
+    leaves = get_leaves(node,named)
+    dates = date_df.loc[leaves]['date']
+    first = min(dates)
+    time = max(dates) - first
+    return time.days, first
+
+def get_times(df,named,date_df):
+    time_vect = np.vectorize(get_time,excluded=[1,2])
+    df['days_circulated'],df['date_observed'] = time_vect(df['node_id'],named,date_df)
+    return df
+
+def make_mutations_df(path,named,dates):
     '''
     Constructs dataframe with all mutations in Usher tree for each gene.
     '''
@@ -34,10 +68,13 @@ def make_mutations_df(path):
     all_muts['mut_type'] = np.where(all_muts.aa_mutation.str[-1]=='*','nonsense',all_muts['mut_type'])
     all_muts['mut_type'] = np.where(all_muts.aa_mutation.str[0]=='*','undoStop',all_muts['mut_type'])
 
+    ## Add time
+    time_muts = get_times(all_muts,named,dates)
+
     ## Add S1
-    S1 = all_muts[(all_muts.gene=='S')&(all_muts.residue >= 13)&(all_muts.residue<=685)].reset_index(drop=True)
+    S1 = time_muts[(time_muts.gene=='S')&(time_muts.residue >= 13)&(time_muts.residue<=685)].reset_index(drop=True)
     S1['gene'] = 'S1'
-    final_muts = pd.concat([all_muts,S1])
+    final_muts = pd.concat([time_muts,S1])
     final_muts[['gene','mut_type']] = final_muts[['gene','mut_type']].astype("category")
 
     return final_muts[['node_id','gene','mut_type']]
@@ -52,7 +89,7 @@ def recode_nodeID(df):
 
     df['id'] = df['node_id'].map(encoder)
 
-    return df[['id', 'gene','mut_type']]
+    return df[['id', 'gene','mut_type','date']]
 
 #def draw_samples(ids,n,chunksize):
 #    '''
@@ -67,39 +104,26 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('--muts', type=str, required=True, help = 'path to input tsv with translations. Output of matUtils summary --translate')
+    parser.add_argument('--tree', type=str, required=True, help = 'path to input nwk tree')
+    parser.add_argument('--dates', type=str, required=True, help = 'path to input tsv.gz containing strain & dates columns for samples in the usher tree')
     parser.add_argument('--output', type = str, required=True, help = 'Path to save muts for bootstrap tsv')
-    #parser.add_argument('--chunkSizes', type = str, required=True, help = 'folder to save chunk sizes in')
     args = parser.parse_args()
 
-    #size = 10000
+    ## Open tree
+    with open(args.tree, 'r') as f:
+        tree = Phylo.read(f,'newick')
 
-    #CHECK_FOLDER = os.path.isdir(args.chunkSizes))
+    ## Load dates
+    dates = load_dates(args.dates)
 
-    # If folder doesn't exist, then create it.
-    #if not CHECK_FOLDER:
-    #    os.makedirs(args.chunkSizes)
+    ## Name tree
+    named = tabulate_names(tree)
 
-    df = make_mutations_df(args.muts)
+    df = make_mutations_df(args.muts,named,dates)
 
     encoded = recode_nodeID(df)
 
-    #del df
+
 
     with open(args.output, 'w') as f:
         encoded.to_csv(f,index=False,sep='\t')
-
-    #ids = encoded['id'].unique()
-#    length = len(ids)#
-
-#    del encoded
-#    del ids#
-
-#    n_chunks = int(np.floor(length/size))
-#    remain = length % size#
-
-#    chunkSizes = [size] * n_chunks + [remain]
-#    for i, chunk in enumerate(chunkSizes):
-#        with open(args.chunkSizes + 'chunk' + str(i)+'.txt', 'w') as fp:
-#                # write each item on a new line
-#                fp.write("%s\n" % chunk)
-#    print('Done writing chunkSizes')

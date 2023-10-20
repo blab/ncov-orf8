@@ -85,6 +85,17 @@ nb_reg = function(df,maxit,cutoff) {
   return(fit)
 }
 
+nb_reg_gam = function(df,maxit,cutoff) {
+  if(missing(cutoff)) {
+    filt = df
+  } else {
+    filt = df[df$branch_muts_counts<cutoff,]
+  }
+  fit = mgcv::gam(n_descendants ~ mut_type + offset(log(time)),data=filt,maxit=maxit,family='nb')
+  print(summary(fit))
+  return(fit)
+}
+
 nb_reg_obermeyer = function(df, maxit,cutoff) {
   if(missing(cutoff)) {
     filt = df
@@ -224,14 +235,59 @@ ggsave("figs/supplemental/clustergrowthrate_gene.pdf",dpi=300,width=6,height=6)
 ggsave("figs/supplemental/clustergrowthrate_gene.jpg",dpi=300,width=6,height=6,bg='white')
 
 
+## By calendar year:
+
+orf8_nb_2020= nb_reg(orf8[orf8$date_observed < '2021-01-01' & orf8$date_observed >= '2020-06-01',],200)
+orf8_coef_2020 = coefficients(orf8_nb_2020,'ORF8')
+orf8_coef_2020 = cbind(orf8_coef_2020, Year='2020')
+
+orf8_nb_2021 = nb_reg(orf8[orf8$date_observed < '2022-01-01' & orf8$date_observed >= '2021-01-01',],50)
+orf8_coef_2021 = coefficients(orf8_nb_2021,'ORF8')
+orf8_coef_2021 = cbind(orf8_coef_2021, Year='2021')
+
+orf8_nb_2022 = nb_reg(orf8[orf8$date_observed < '2023-01-01' & orf8$date_observed >= '2022-01-01',],50)
+orf8_coef_2022 = coefficients(orf8_nb_2022,'ORF8')
+orf8_coef_2022 = cbind(orf8_coef_2022, Year='2022')
+
+orf8_nb_2023 = nb_reg(orf8[orf8$date_observed >= '2023-01-01',],50)
+orf8_coef_2023 = coefficients(orf8_nb_2023,'ORF8')
+orf8_coef_2023 = cbind(orf8_coef_2023, Year='2023')
+
+
+results.orf8.yr = bind_rows(orf8_coef_2020,orf8_coef_2021,orf8_coef_2022, orf8_coef_2023)
+results.orf8.yr = format_results(results.orf8.yr)
+
+results.orf8.yr %>%
+  filter(Variable!='(Intercept)')  %>%
+  mutate(Mutation_type = mapping[Variable])%>% 
+  mutate(Mutation_type = fct_relevel(Mutation_type, c("Nonsense","Missense")))%>%
+  ggplot(aes(y=Year)) +
+  geom_vline(xintercept=1,linetype='dashed') +
+  geom_pointrange(aes(x=Fold_change,xmin=`2.5 %`,xmax=`97.5 %`,color=Mutation_type,fill=Mutation_type),position=position_dodge(width=0.4),size=0.5) +
+  #facet_wrap(vars(Gene),nrow=3) +
+  scale_x_log10() +
+  theme_minimal() +
+  xlab('Fold change in cluster growth rate\nrelative to synonymous') +
+  scale_fill_manual(name='Mutation type',values=c('#e71d36','#2EC4B6','grey30','lightgrey'))+
+  scale_color_manual(name='Mutation type',values=c('#e71d36','#2EC4B6','grey30','lightgrey')) +
+  #scale_fill_manual(name='Mutation type',values=c('#e71d36','#2EC4B6'))+
+  #scale_color_manual(name='Mutation type',values=c('#e71d36','#2EC4B6')) +
+  ylab('') +
+  theme(axis.text.y=element_text(size=11,color='black')) +
+  ggtitle('ORF8')
+
+
+orf1a_nb = nb_reg(orf1a,100)
+orf1a_coef = coefficients(orf1a_nb,'ORF1a')
+spike_nb = nb_reg(spike,200)
+spike_coef = coefficients(spike_nb,'Spike')  
 
 
 
 
 
 
-
-
+## no Alpha & XBB
 orf8_nb = glm.nb(n_descendants ~ mut_type + offset(log(time)),data=orf8,maxit=50)
 orf8_noAlphaXBB = orf8[orf8$aa_mutations!='ORF8:Q27*' & orf8$aa_mutations!='ORF8:G8*',]
 orf8_noAlphaXBB_nb = glm.nb(n_descendants ~ mut_type + offset(log(time)),data=orf8_noAlphaXBB,maxit=50)

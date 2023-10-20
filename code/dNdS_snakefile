@@ -1,6 +1,6 @@
 ## To run this workflow:
 ## First, generate `usher/trimmed/usher_translations.tsv` using matUtils summary --translate
-## Then run analysis in main directory using `snakemake code/dNdS_snakefile`
+## Then run analysis in main directory using `snakemake -s code/dNdS_snakefile`
 
 rule all:
     input:
@@ -9,14 +9,18 @@ rule all:
 
 rule setup_bootstrap:
     input:
-        muts = "usher/trimmed/usher_translations.tsv"
+        muts = "usher/trimmed/usher_translations.tsv",
+        tree = "usher/trimmed/trimmed_2023-05-01.all.nwk",
+        dates = "usher/public-2023-05-01.metadata.tsv.gz"
     output:
         muts = "usher/trimmed/usher_mutTypes.tsv",
     shell:
         '''
         python code/setup_bootstrap.py \
             --muts {input.muts} \
-            --output {output.muts} \
+            --tree {input.tree} \
+            --dates {input.dates} \
+            --output {output.muts}
         '''
 
 rule run_bootstrap:

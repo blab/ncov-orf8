@@ -11,6 +11,10 @@ setwd("~/Work/projects/covid/long-deletions")
 ## Read in SARS2 ORF8 dataset
 df <- read_tsv("wa_results/clinical_combined.tsv")
 
+## for demo use:
+#df <- read_tsv('data/clinical_example.tsv')
+
+
 
 df$age_group = fct_relevel(df$age_group, "0-4", "5-17", "18-44", "45-64", "65-79", "80+")
 

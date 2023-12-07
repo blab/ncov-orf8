@@ -1,0 +1,221 @@
+## Run analysis in main directory using `snakemake -s code/variant_snakefile`
+
+mapping = {
+'19A':'19A',
+'19B':'19B',
+'20A':'20A',
+'20B':'20B',
+'20C':'20C',
+'20D':'20D',
+'20E':'20E (EU1)',
+'20F':'20F',
+'20G':'20G',
+'20H':'20H (Beta,V2)',
+'20I':'20I (Alpha,V1)',
+'20J':'20J (Gamma,V3)',
+'21A':'21A (Delta)',
+'21B':'21B (Kappa)',
+'21C':'21C (Epsilon)',
+'21D':'21D (Eta)',
+'21E':'21E (Theta)',
+'21F':'21F (Iota)',
+'21G':'21G (Lambda)',
+'21H':'21H (Mu)',
+'21I':'21I (Delta)',
+'21J':'21J (Delta)',
+'21K':'21K (Omicron)',
+'21L':'21L (Omicron)',
+'21M':'21M (Omicron)',
+'22A':'22A (Omicron)',
+'22B':'22B (Omicron)',
+'22C':'22C (Omicron)',
+'22D':'22D (Omicron)',
+'22E':'22E (Omicron)',
+'22F':'22F (Omicron)'
+}
+
+rule all:
+    input:
+        #diffs = expand("usher/trimmed/{clade}/{clade}_dMdNdS.tsv", clade=mapping.keys()),
+        diffs_degen = expand("usher/trimmed/{clade}/{clade}_dMdNdS_4degen.tsv", clade=mapping.keys()),
+        #clusters = expand("usher/trimmed/{clade}/mutClustersDone.txt", clade=mapping.keys()),
+        clades = "usher/trimmed/node_clades.tsv"
+
+rule clades:
+  input:
+    tree = "usher/trimmed/trimmed_2023-05-01.all.pb.gz"
+  output:
+    clades = "usher/trimmed/usher_sample_clades.tsv"
+  conda: "../envs/usher-env.yaml"
+  shell:
+    '''
+    matUtils summary \
+      --input-mat {input.tree} \
+      --sample-clades {output.clades}
+    '''
+
+rule label_clades:
+  input:
+    tree = "usher/trimmed/trimmed_2023-05-01.all.nwk",
+    clades = "usher/trimmed/usher_sample_clades.tsv"
+  output:
+    clades = "usher/trimmed/node_clades.tsv"
+  conda: "../envs/orf8ko.yaml"
+  shell:
+    '''
+    python code/labelNodes.py \
+      --tree {input.tree} \
+      --clades {input.clades} \
+      --output {output.clades}
+    '''
+
+rule extract_clade_tree:
+  input:
+    mat = "usher/trimmed/trimmed_2023-05-01.all.pb.gz"
+  params:
+    clade = lambda wc: mapping[wc.clade]
+  output:
+    clade_mat = "usher/trimmed/{clade}/{clade}_trimmed_2023-05-01.pb",
+    clade_tree = "usher/trimmed/{clade}/{clade}_trimmed_2023-05-01.nwk"
+  conda: "../envs/usher-env.yaml"
+  shell:
+    '''
+    matUtils extract \
+      --input-mat {input.mat} \
+      --clade "{params.clade}" \
+      --write-mat {output.clade_mat} \
+      --write-tree {output.clade_tree}
+    '''
+
+rule summarise:
+  input:
+    mat = "usher/trimmed/{clade}/{clade}_trimmed_2023-05-01.pb",
+    gtf = "usher/params/reference_seq.gtf",
+    fasta = "usher/params/reference_seq.fasta"
+  output:
+    translations = "usher/trimmed/{clade}/{clade}_translations.tsv",
+    nodes = "usher/trimmed/{clade}/{clade}_nodes.tsv"
+  conda: "../envs/usher-env.yaml"
+  shell:
+    '''
+    matUtils summary \
+      --input-mat {input.mat} \
+      --input-gtf {input.gtf} \
+      --input-fasta {input.fasta} \
+      --translate {output.translations} \
+      --node-stats {output.nodes}
+    '''
+
+rule get_mutation_clusters:
+    input:
+        tree = "usher/trimmed/{clade}/{clade}_trimmed_2023-05-01.nwk",
+        nodes = "usher/trimmed/{clade}/{clade}_nodes.tsv",
+        translations = "usher/trimmed/{clade}/{clade}_translations.tsv",
+        dates = "usher/public-2023-05-01.metadata.tsv.gz"
+    params:
+      gene = "ORF8"
+    output:
+      clades = directory("usher/trimmed/{clade}/clades_nested/"),
+      done = touch("usher/trimmed/{clade}/mutClustersDone.txt")
+    conda: "../envs/orf8ko.yaml"
+    shell:
+        '''
+        python code/getMutationClusters.py \
+          --tree {input.tree} \
+          --stats {input.nodes} \
+          --muts {input.translations} \
+          --dates {input.dates} \
+          --genes {params.gene} \
+          --nested \
+          --outputdir {output.clades}
+        '''
+
+rule setup_bootstrap:
+    input:
+        muts = "usher/trimmed/usher_translations.tsv",
+        clades = "usher/trimmed/node_clades.tsv"
+    output:
+        muts = "usher/trimmed/usher_mutTypes.tsv"
+    conda: "../envs/orf8ko.yaml"
+    shell:
+        '''
+        python code/setup_bootstrap.py \
+            --muts {input.muts} \
+            --clades {input.clades} \
+            --output {output.muts}
+        '''
+
+rule setup_clades_bootstrap:
+    input:
+        muts = "usher/trimmed/usher_mutTypes.tsv"
+    params:
+        clade = lambda wc: mapping[wc.clade]
+    output:
+        muts = "usher/trimmed/{clade}/{clade}_mutTypes.tsv"
+    conda: "../envs/orf8ko.yaml"
+    shell:
+        '''
+        python code/clades_bootstrap.py \
+            --muts {input.muts} \
+            --clade "{params.clade}" \
+            --output {output.muts}
+        '''
+
+rule run_bootstrap:
+    input:
+        muts = "usher/trimmed/{clade}/{clade}_mutTypes.tsv",
+    params:
+        iterations = 100
+    output:
+        counts = "usher/trimmed/{clade}/bootstrap/counts{iteration}.tsv",
+    conda: "../envs/orf8ko.yaml"
+    shell:
+        '''
+        python code/run_bootstrap.py \
+            --muts {input.muts} \
+            --counts {output.counts} \
+            --size {params.iterations}
+        '''
+
+chunks = list(range(100))
+
+rule combine_bootstrap:
+    input:
+        ref = "params/sars2_wS1_ref.gb",
+        muts = "usher/trimmed/{clade}/{clade}_mutTypes.tsv",
+        counts = expand("usher/trimmed/{{clade}}/bootstrap/counts{iteration}.tsv", iteration=chunks)
+    params:
+        ci = 95
+    output:
+        diffs = "usher/trimmed/{clade}/{clade}_dMdNdS.tsv"
+    conda: "../envs/orf8ko.yaml"
+    shell:
+        '''
+        python code/combine_bootstrap.py \
+            --ref {input.ref} \
+            --muts {input.muts} \
+            --ci {params.ci} \
+            --counts {input.counts} \
+            --diffs {output.diffs}
+        '''
+
+rule combine_bootstrap_degen:
+    input:
+        ref = "params/sars2_wS1_ref.gb",
+        muts = "usher/trimmed/{clade}/{clade}_mutTypes.tsv",
+        counts = expand("usher/trimmed/{{clade}}/bootstrap/counts{iteration}.tsv", iteration=chunks)
+    params:
+        ci = 95
+    output:
+        diffs = "usher/trimmed/{clade}/{clade}_dMdNdS_4degen.tsv"
+    conda: "../envs/orf8ko.yaml"
+    shell:
+        '''
+        python code/combine_bootstrap.py \
+            --ref {input.ref} \
+            --muts {input.muts} \
+            --ci {params.ci} \
+            --counts {input.counts} \
+            --degenerate \
+            --diffs {output.diffs}
+        '''

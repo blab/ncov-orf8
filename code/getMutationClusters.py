@@ -15,6 +15,7 @@ import argparse
 from Bio import Phylo
 import pandas as pd
 import numpy as np
+import pathlib
 
 def load_dates(path):
     df = pd.read_csv(path,sep='\t',usecols=['strain','date'],compression='gzip')
@@ -128,6 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('--muts', type=str, required=True, help = 'path to input tsv with translations. Output of matUtils summary --translate')
     parser.add_argument('--dates', type=str, required=True, help = 'path to input tsv containing strain & dates columns for samples in the usher tree')
     parser.add_argument('--nested', action="store_true", help = 'Identifies nested clades')
+    parser.add_argument('--genes', nargs='+', type=str, default='ORF1a ORF1b S ORF3a E M ORF6 ORF7a ORF7b ORF8 N ORF9b', help = 'Genes for which to generate mutation clusters')
     parser.add_argument('--outputdir', type=str, required=True, help = 'path to output directory')
     args = parser.parse_args()
 
@@ -149,7 +151,11 @@ if __name__ == '__main__':
     # Create dictionary of parent for each node
     parents = all_parents(tree)
 
-    for gene in ['ORF1a','ORF1b','S','ORF3a','E','M','ORF6','ORF7a','ORF7b','ORF8','N','ORF9b']: ## ADD code for S1
+
+    path = pathlib.Path(args.outputdir)
+    path.mkdir(parents=True, exist_ok=True)
+
+    for gene in args.genes: ## ADD code for S1
         print('Starting ' + gene)
 
         # Find nodes with a mutation in that gene & classify mutation type
@@ -176,5 +182,5 @@ if __name__ == '__main__':
         clustered = add_cluster(plus_parents)
 
         # Save output
-        with open(args.outputdir + gene + '_clades.tsv', 'w') as f:
+        with open(args.outputdir + '/' + gene + '_clades.tsv', 'w') as f:
             clustered.to_csv(f,sep='\t',index=False)

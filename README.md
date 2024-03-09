@@ -58,7 +58,7 @@ renv::restore(lockfile = 'envs/renv.lock')
 This process should take a few minutes.
 
 #### Running the analyses
-- Run `code/find_ko.py` on .fasta alignment of WA sequences to call potential gene knockouts. See above to access sequences and metadata from GISAID.
+- Run `code/find_ko.py` on .fasta alignment of WA sequences to call potential gene knockouts. See above to access sequences and metadata from GISAID. 
 - Build and call transmission clusters using `nextstrain_build`
 - Calculate dN/dS using the snakemake workflow: `code/dNdS_snakefile`. See above to download the UShER tree for this analysis.
 - Call mutation clusters from UShER tree using `code/getMutationClusters.py`

@@ -99,11 +99,11 @@ def get_counts(df, genes):
     mutTypes = []
     counts = []
     for gene in genes:
-        geneList.extend([gene]*4)
         for mut_type in df.mut_type.unique():
             mutTypes.append(mut_type)
             count = len(df[(df.gene==gene)&(df.mut_type==mut_type)])
             counts.append(count)
+            geneList.append(gene)
     result = pd.DataFrame({'gene':geneList,'mut_type':mutTypes,'count':counts})
     return result
 
@@ -119,7 +119,10 @@ def get_differences(counts,denominators, genes):
     for gene in genes:
         df.loc[(df.gene==gene),'dS'] = df.loc[(df.gene==gene),'synonymous']/denominators['synonymous'][gene]
         df.loc[(df.gene==gene),'dN'] = df.loc[(df.gene==gene),'missense']/denominators['missense'][gene]
-        df.loc[(df.gene==gene),'dStop'] = df.loc[(df.gene==gene),'nonsense']/denominators['nonsense'][gene]
+        if 'nonsense' in df.columns:
+            df.loc[(df.gene==gene),'dStop'] = df.loc[(df.gene==gene),'nonsense']/denominators['nonsense'][gene]
+        else:
+            df.loc[(df.gene==gene),'dStop'] = 0/denominators['nonsense'][gene]
     df['dN_dS'] = df['dN']/df['dS']
     df['dStop_dS'] = df['dStop']/df['dS']
     return df
@@ -135,7 +138,13 @@ def get_ci(df,ci):
     '''
     Returns confidence intervals from bootstrap diffs.
     '''
-    new_df = df.drop(columns=['iteration','missense','synonymous','nonsense','undoStop'])
+    if 'undoStop' in df.columns:
+        if 'nonsense' in df.columns:
+            new_df = df.drop(columns=['iteration','missense','synonymous','nonsense','undoStop'])
+    elif 'nonsense' in df.columns:
+        new_df = df.drop(columns=['iteration','missense','synonymous','nonsense'])
+    else:
+        new_df = df.drop(columns=['iteration','missense','synonymous'])
     minimum = (100-ci)/200
     maximum = 1-minimum
     minimums = get_percentile(new_df,minimum,'_min')

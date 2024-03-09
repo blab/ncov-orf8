@@ -43,7 +43,6 @@ cluster:
   mkdir -p slurm_logs/{rule} &&
   sbatch
     --parsable
-    -p {resources.partition}
     --nodes=1
     --ntasks=1
     --time={resources.runtime}
@@ -51,7 +50,7 @@ cluster:
     --output=slurm_logs/{rule}/{rule}-{wildcards}.out
     --error=slurm_logs/{rule}/{rule}-{wildcards}.err
     --job-name={rule}-{wildcards}
-
+#  -p {resources.partition}
 #--qos={resources.qos}
 # Tell Snakemake how to cancel jobs on the cluster when user uses Ctrl-C.
 

@@ -145,6 +145,7 @@ orf9b_nb = nb_reg(orf9b,200)
 orf9b_coef = coefficients(orf9b_nb,'ORF9b')  
 
 results = bind_rows(orf1a_coef,orf1b_coef,spike_coef,orf3a_coef,e_coef,m_coef,orf6_coef,orf7a_coef,orf7b_coef,orf8_coef,n_coef,orf9b_coef)
+write_delim(results,'usher/trimmed/clusterGrowthRate.tsv',delim='\t')
 
 orf1a_obermeyer_nb = nb_reg_obermeyer(orf1a, 100)
 orf1a_obermeyer_coef = coefficients(orf1a_obermeyer_nb,'ORF1a')
@@ -237,19 +238,21 @@ ggsave("figs/supplemental/clustergrowthrate_gene.jpg",dpi=300,width=6,height=6,b
 
 ## By calendar year:
 
-orf8_nb_2020= nb_reg(orf8[orf8$date_observed < '2021-01-01' & orf8$date_observed >= '2020-06-01',],200)
+
+
+orf8_nb_2020= nb_reg(orf8_noAlphaXBB[orf8_noAlphaXBB$date_observed < '2021-01-01' & orf8_noAlphaXBB$date_observed >= '2020-06-01',],200)
 orf8_coef_2020 = coefficients(orf8_nb_2020,'ORF8')
 orf8_coef_2020 = cbind(orf8_coef_2020, Year='2020')
 
-orf8_nb_2021 = nb_reg(orf8[orf8$date_observed < '2022-01-01' & orf8$date_observed >= '2021-01-01',],50)
+orf8_nb_2021 = nb_reg(orf8_noAlphaXBB[orf8_noAlphaXBB$date_observed < '2022-01-01' & orf8_noAlphaXBB$date_observed >= '2021-01-01',],50)
 orf8_coef_2021 = coefficients(orf8_nb_2021,'ORF8')
 orf8_coef_2021 = cbind(orf8_coef_2021, Year='2021')
 
-orf8_nb_2022 = nb_reg(orf8[orf8$date_observed < '2023-01-01' & orf8$date_observed >= '2022-01-01',],50)
+orf8_nb_2022 = nb_reg(orf8_noAlphaXBB[orf8_noAlphaXBB$date_observed < '2023-01-01' & orf8_noAlphaXBB$date_observed >= '2022-01-01',],50)
 orf8_coef_2022 = coefficients(orf8_nb_2022,'ORF8')
 orf8_coef_2022 = cbind(orf8_coef_2022, Year='2022')
 
-orf8_nb_2023 = nb_reg(orf8[orf8$date_observed >= '2023-01-01',],50)
+orf8_nb_2023 = nb_reg(orf8_noAlphaXBB[orf8_noAlphaXBB$date_observed >= '2023-01-01',],50)
 orf8_coef_2023 = coefficients(orf8_nb_2023,'ORF8')
 orf8_coef_2023 = cbind(orf8_coef_2023, Year='2023')
 

@@ -145,7 +145,13 @@ clust$end = as.numeric(clust$end)
 clust$deletionSize = clust$end-clust$start
 
 # Number of clusters & cluster size
-clust.grouped <- clust %>% group_by(cluster,ORF8_koType,deletionSize,protein_size) %>% count()
+clust.grouped <- clust %>% 
+  group_by(cluster,ORF8_koType,deletionSize,protein_size,start,end) %>%
+  count() %>%
+  mutate(orf7b = ifelse(start<= 27877,'Yes','No'))
+
+clust.del <- clust.grouped %>% filter(ORF8_koType=='bigDeletion')
+
 clust.grouped %>%
   filter(ORF8_koType=='bigDeletion') 
 
@@ -160,8 +166,10 @@ mean(clust.grouped[clust.grouped$ORF8_koType=='earlyStop',]$n)
 
 wilcox.test(clust.grouped[clust.grouped$ORF8_koType=='bigDeletion',]$n,clust.grouped[clust.grouped$ORF8_koType=='earlyStop',]$n)
 
+wilcox.test(clust.del[clust.del$orf7b=='Yes',]$n,clust.del[clust.del$orf7b=='No',]$n )
 ## Cluster size by deletion size
 cor.test(clust.grouped[(clust.grouped$ORF8_koType=='bigDeletion')&(clust.grouped$n>1),]$deletionSize,clust.grouped[(clust.grouped$ORF8_koType=='bigDeletion')&(clust.grouped$n>1),]$n)
+cor.test(clust.grouped[(clust.grouped$ORF8_koType=='bigDeletion')&(clust.grouped$n>1) &(clust.grouped$orf7b=='No'),]$deletionSize,clust.grouped[(clust.grouped$ORF8_koType=='bigDeletion')&(clust.grouped$n>1) &(clust.grouped$orf7b=='No'),]$n)
 cor.test(clust.grouped[(clust.grouped$ORF8_koType=='bigDeletion'),]$deletionSize,clust.grouped[(clust.grouped$ORF8_koType=='bigDeletion'),]$n)
 
 dsize_clust <- clust.grouped %>%

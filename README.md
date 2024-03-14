@@ -20,13 +20,14 @@ Clinical data from Washington State Disease Reporting System is not included as 
 GISAID metadata and sequenced used in the analysis may be accessed at [gisaid.org/EPI_SET_230921by](https://www.epicov.org/epi3/epi_set/EPI_SET_230921by?main=true).  
 The SARS-CoV-2 UShER phylogeny is available from [UShER](http://hgdownload.soe.ucsc.edu/goldenPath/wuhCor1/UShER_SARS-CoV-2/2023/05/01).
 - `code` contains the scripts for all analyses.
-- `data` contains simulated clinical data for use in severity analysis & mutation annotations from [Obermeyer et al](https://www.science.org/doi/full/10.1126/science.abm1208). Please access the GISAID sequences and SARS-CoV-2 UShER phylogeny using the above links.
+- `data` contains simulated clinical data containing all variables used in severity analysis to check code quality. It also contains a subset of the clinical data variables, which we have permission to share. This folder also contains mutation annotations from [Obermeyer et al](https://www.science.org/doi/full/10.1126/science.abm1208). Please access the GISAID sequences and SARS-CoV-2 UShER phylogeny using the above links.
 - `nextstrain_build` contains the identified clusters and the configurations for building the nextstrain trees to identify transmission clusters of gene knockouts in Washington State.
 - `envs` contains the conda config files for python code & notebooks and for matUtils.
 - `figs` contains the figures for the manuscript.
 - `notebooks` contains jupyter notebooks for plotting results and initial analyses.
 - `params` includes the SARS-CoV-2 reference genomes used in analyses & the config file for snakemake pipeline.
 - `usher` contains results from analyses using the usher phylogeny.
+- `intrahost` contains intrahost variants after filtering to remove samples that did not pass QC.
 
 #### Setup & installation
 Use [mamba](https://anaconda.org/conda-forge/mamba) to quickly (~5 min) install matUtils & python notebooks environments.
@@ -60,8 +61,10 @@ This process should take a few minutes.
 #### Running the analyses
 - Run `code/find_ko.py` on .fasta alignment of WA sequences to call potential gene knockouts. See above to access sequences and metadata from GISAID. 
 - Build and call transmission clusters using `nextstrain_build`
+- Run intrahost analysis using `notebooks/intrahost_analysis.ipynb`
 - Calculate dN/dS using the snakemake workflow: `code/dNdS_snakefile`. See above to download the UShER tree for this analysis.
 - Call mutation clusters from UShER tree using `code/getMutationClusters.py`
 - Model cluster growth rates using: `code/clusterSize_regression.R`
+- Run clade-level analyses using the snakemake workflow: `code/variant_snakefile`. See above to download the UshER tree for this analysis.
 - `code/combineClinicalData.R` is used to generate the dataframe for clinical analysis.
-- Use `code/Fig4.R` to run the clinical severity analysis. Although we cannot share clinical data to protect patient privacy, we have provided `data/clinical_example.tsv` as a demo dataset.
+- Use `code/Fig5.R` to run the clinical severity analysis. Although we cannot share the full clinical data to protect patient privacy, we have provided `data/clinical_example.tsv` as a demo dataset. We have also provided a subset of clinical variables, which we are able to share to while protecting patient privacy, at `data/clinical_subset.tsv`.

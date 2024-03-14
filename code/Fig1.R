@@ -58,10 +58,15 @@ ko_time_gb = plot_ko_time(df_gb) + labs(title='Data from Genbank')
 ko_time_gb
 ggsave("figs/fig1/Orf8ko_time_genbank.pdf",dpi=300,width=5,height=2.5)
 
+clades = c("23B (Omicron)" = "23B (XBB.1.16)", "23A (Omicron)" = "23A (XBB.1.5)", "22F (Omicron)" = "22F (XBB)","22E (Omicron)"="22E (BQ.1)", "22D (Omicron)" = "22D (BA.2.75)", "22C (Omicron)" = "22C (BA.2.12.1)", "22B (Omicron)" = "22B (BA.5)", "22A (Omicron)" = "22A (BA.4)")
 
+df %>% 
+  filter(coverage>=0.95) %>%
+  mutate(clade = if_else(Nextstrain_clade %in% names(clades), clades[Nextstrain_clade], Nextstrain_clade)) %>%  
+  select(gisaid_epi_isl, strain, date, ORF8_koType,clade) %>%
+  write_tsv('figs/fig1/1AB_SourceData.tsv')
 
 ## What is the distribution of ORF8KO by clades
-clades = c("23B (Omicron)" = "23B (XBB.1.16)", "23A (Omicron)" = "23A (XBB.1.5)", "22F (Omicron)" = "22F (XBB)","22E (Omicron)"="22E (BQ.1)", "22D (Omicron)" = "22D (BA.2.75)", "22C (Omicron)" = "22C (BA.2.12.1)", "22B (Omicron)" = "22B (BA.5)", "22A (Omicron)" = "22A (BA.4)")
 
 get_noAlphaXBB = function(df,clades) {
   no_alphaXBB <- df %>% 
@@ -126,6 +131,13 @@ clust %>%
   theme(legend.position="none") +
   theme(axis.text.x=element_text(size=11,color='black'))
 
+clust %>%
+  group_by(cluster,ORF8_koType) %>%
+  count() %>%
+  filter(n>1) %>%
+  rename(clusterSize = n, clusterNumber = cluster) %>%
+  write_tsv('figs/fig1/1D_SourceData.tsv')
+
 ggsave("figs/fig1/Orf8ko_clustSize.pdf",dpi=300,width=2.5,height=2)
 
 
@@ -185,6 +197,14 @@ dsize_clust <- clust.grouped %>%
   theme(text=element_text(family='Helvetica'))
 dsize_clust
 ggsave("figs/supplemental/deletionSize_clustSize.pdf",dpi=300,width=3,height=2)
+
+
+clust.grouped %>%
+  ungroup() %>%
+  filter(n>1) %>%
+  rename(clusterID = cluster, clusterSize = n) %>%
+  select(clusterID, ORF8_koType, deletionSize, protein_size, clusterSize) %>%
+  write_tsv('figs/supplemental/S2_SourceData.tsv')
 
 ## cluster size by protein size
 cor.test(clust.grouped[(clust.grouped$ORF8_koType=='earlyStop')&(clust.grouped$n>1),]$protein_size,clust.grouped[(clust.grouped$ORF8_koType=='earlyStop')&(clust.grouped$n>1),]$n)

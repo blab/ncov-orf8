@@ -184,6 +184,18 @@ clin.prop <- hosp.2way %>%
 clin.prop
 ggsave('figs/fig5/proportions_clinical.pdf',dpi=300,height=3.5,width=3)
 
+hosp.2way %>%
+  full_join(died.2way) %>%
+  pivot_longer(cols=c('hosp','died'),names_to='outcome') %>%
+  mutate(outcome = as_factor(outcome)) %>%
+  mutate(outcome = fct_relevel(outcome,c('hosp','died'))) %>%
+  filter(!is.na(value)) %>%
+  filter(value!='No') %>%
+  rename(Proportion = n) %>%
+  select(ORF8_ko,Proportion,outcome) %>%
+  write_tsv('figs/fig5/5A_SourceData.tsv')
+
+
 df_agg <- df %>%
   filter(age_group != "Unknown") %>%
   filter(!is.na(age_group)) %>%
@@ -343,7 +355,7 @@ exp(hosp15$coefficients)
 exp(hosp11$coefficients)
 exp(hosp18$coefficients)
 
-cbind(OR = exp(hosp11$coefficients[2:6]), exp(confint(hosp11,parm=c("ORF8_koYes","age_group","sex_at_birthMale","vaccinatedyes","VOCYes"))))
+or_hospF = cbind(OR = exp(hosp11$coefficients[2:6]), exp(confint(hosp11,parm=c("ORF8_koYes","age_group","sex_at_birthMale","vaccinatedyes","VOCYes"))))
 
 ## power calculations for hospital
 r2A = pseudoR2(hosp14)
@@ -353,11 +365,6 @@ v=25460
 u = 25531-v-1
 pwr.f2.test(u=u,v=v,f2=f2)
 
-
-
-
-# or_hospF = questionr::odds.ratio(hosp9)
-or_hospF = questionr::odds.ratio(hosp11)
 
 ## Effect of ORF8KO & vaccines seems to be stronger in younger people...
 ## Effect of ORF8KO only in unvaccinated people
@@ -430,6 +437,11 @@ effect$`2.5 %` = as.numeric(effect$`2.5 %`)
 effect$`97.5 %` = as.numeric(effect$`97.5 %`)
 effect$clusterSize = as.numeric(effect$clusterSize)
 effect$aic = as.numeric(effect$aic)
+
+effect %>% 
+  filter(variable=='KOYes') %>%
+  select(-variable) %>%
+  write_tsv('figs/supplemental/S9_SourceData.tsv')
 
 odds_cluster <- effect %>%
   filter(variable=='KOYes') %>%
@@ -529,8 +541,7 @@ summary(death9)
 cbind(OR = exp(death4$coefficients[2:6]), exp(confint(death4,parm=c("ORF8_koYes","age_group","sex_at_birthMale","vaccinatedyes","VOCYes"))))
 
 
-#or_death <- questionr::odds.ratio(death3)
-or_death <- questionr::odds.ratio(death4)
+or_death = cbind(OR = exp(death4$coefficients[2:6]), exp(confint(death4,parm=c("ORF8_koYes","age_group","sex_at_birthMale","vaccinatedyes","VOCYes"))))
 
 ### Do we even have power to detect an effect of death?
 pseudoR2 = function(model){
@@ -576,12 +587,17 @@ colnames(or_death)[3] ="minCI"
 colnames(or_death)[4] ="maxCI"
 or_death <- cbind(or_death, regression='death')
 or_hospF <- cbind(or_hospF, regression='hospitalization')
-all_odds <- rbind(or_death, or_hospF)
+all_odds <- rbind(or_death, or_hospF) %>%
+  as_tibble()
 
+all_odds$OR = as.numeric(all_odds$OR)
+all_odds$minCI = as.numeric(all_odds$minCI)
+all_odds$maxCI = as.numeric(all_odds$maxCI)
+
+all_odds %>%
+  write_tsv('figs/fig5/5B_SourceData.tsv')
 
 odds_both <- all_odds %>%
-  filter(Variable!="(Intercept)") %>%
-  filter(!grepl("wkyr",Variable)) %>%
   ggplot(aes(y=Variable,x=OR)) +
   geom_vline(xintercept=1,linetype='dashed') +
   geom_pointrange(size=0.7,aes(xmin=minCI, xmax=maxCI, color=regression,fill=regression),position=position_dodge(width=0.6))+

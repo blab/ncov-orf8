@@ -184,15 +184,29 @@ clin.prop <- hosp.2way %>%
 clin.prop
 ggsave('figs/fig5/proportions_clinical.pdf',dpi=300,height=3.5,width=3)
 
+df_agg <- df %>%
+  filter(age_group != "Unknown") %>%
+  filter(!is.na(age_group)) %>%
+  filter(!is.na(ORF8_ko)) %>%
+  filter(sex_at_birth != 'Other') %>%
+  filter(!grepl("Omicron",Nextstrain_clade)) %>%
+  filter(coverage>= 0.95) %>%
+  filter(!is.na(sex_at_birth)) %>%
+  mutate(hosp = if_else(is.na(hosp),'Unknown',hosp)) %>%
+  filter(!is.na(vaccinated)) %>%
+  mutate(VOC = if_else(grepl("Alpha",Nextstrain_clade)|grepl("Delta",Nextstrain_clade)|grepl("Beta",Nextstrain_clade)|grepl("Gamma",Nextstrain_clade),"Yes","No"))
+
+df_agg$died = fct_relevel(df_agg$died, "No", "Yes")
+
+df_agg %>%
+  select(ORF8_ko,sex_at_birth,vaccinated, VOC,hosp,died) %>%
+  write_tsv('data/clinical_subset.tsv')
+
 ## Table
-no_omicron <- df %>%
+no_omicron <- df_agg %>%
   filter(!grepl("Omicron",Nextstrain_clade)) %>%
   mutate(vaccinated = ifelse(vaccinated=='no','No','Yes')) %>%
   mutate(ORF8_ko = ifelse(ORF8_ko == 'Yes', 'ORF8 knockout','ORF8 intact')) %>%
-  #filter(!is.na(age_group)) %>%
-  #filter(!is.na(sex_at_birth)) %>%
-  #filter(sex_at_birth!='Other') %>%
-  mutate(VOC = if_else(grepl("Alpha",Nextstrain_clade)|grepl("Delta",Nextstrain_clade)|grepl("Beta",Nextstrain_clade)|grepl("Gamma",Nextstrain_clade),"Yes","No")) %>%
   dplyr::select(died,hosp,ORF8_ko,vaccinated,age_group,sex_at_birth,VOC,wkyr)
 
 label(no_omicron$ORF8_ko) = 'ORF8 knockout?'
@@ -204,7 +218,7 @@ label(no_omicron$VOC) = 'Variant of concern?'
 no_omicron$age_group = factor(no_omicron$age_group, levels=c("0-4", "5-17", "18-44", "45-64", "65-79", "80+"))
 label(no_omicron$age_group) = 'Age group'
 label(no_omicron$wkyr) = 'Year + Epiweek'
-table1(~hosp + died + VOC + age_group + sex_at_birth + vaccinated + wkyr | ORF8_ko, data=no_omicron,topclass="Rtable1-grid")
+table1(~hosp + died + VOC + age_group + sex_at_birth + vaccinated | ORF8_ko, data=no_omicron,topclass="Rtable1-grid")
 
 
 
@@ -461,47 +475,6 @@ odds_cluster + aic_cluster + plot_layout(nrow=2) + plot_annotation(tag_levels = 
 
 ggsave('figs/supplemental/OddsRatio_clustersize_time.pdf',dpi=300,height=6,width=4)
 ggsave('figs/supplemental/OddsRatio_clustersize_time.jpg',dpi=300,height=6,width=4,bg='white')
-
-
-df_hosp <- df %>%
-  filter(hosp != "Unknown") %>%
-  filter(age_group != "Unknown") %>%
-  filter(!is.na(age_group)) %>%
-  filter(!is.na(ORF8_ko)) %>%
-  filter(sex_at_birth != 'Other') %>%
-  filter(!grepl("Omicron",Nextstrain_clade)) %>%
-  filter(coverage>= 0.95) %>%
-  mutate(VOC = if_else(grepl("Alpha",Nextstrain_clade)|grepl("Delta",Nextstrain_clade)|grepl("Beta",Nextstrain_clade)|grepl("Gamma",Nextstrain_clade),"Yes","No"))
-df_hosp$age_group = as.numeric(df_hosp$age_group)
-df_hosp$hosp = as.factor(df_hosp$hosp)
-
-df_agg <- df %>%
-  filter(age_group != "Unknown") %>%
-  filter(!is.na(age_group)) %>%
-  filter(!is.na(ORF8_ko)) %>%
-  filter(sex_at_birth != 'Other') %>%
-  filter(!grepl("Omicron",Nextstrain_clade)) %>%
-  filter(coverage>= 0.95) %>%
-  filter(!is.na(sex_at_birth)) %>%
-  filter(!is.na(vaccinated)) %>%
-  mutate(VOC = if_else(grepl("Alpha",Nextstrain_clade)|grepl("Delta",Nextstrain_clade)|grepl("Beta",Nextstrain_clade)|grepl("Gamma",Nextstrain_clade),"Yes","NO"))
-
-df_agg$died = fct_relevel(df_agg$died, "No", "Yes")
-
-df_agg %>% group_by(sex_at_birth,vaccinated, age_group, hosp, died) %>% count() %>% print(n=115) %>% write.csv(file="agg_groups.csv")
-df_agg %>% group_by(sex_at_birth,vaccinated, ORF8_ko, hosp, died) %>% count() %>% print(n=115)
-df_agg %>% group_by(sex_at_birth,vaccinated, hosp, died) %>% count() %>% print(n=115)
-
-df_agg %>% group_by(age_group, hosp) %>% count() %>% print(n=115)
-
-
-
-df_agg %>% group_by(sex_at_birth,vaccinated, age_group, hosp, died) %>% add_count() %>%
-  ungroup() %>%
-  mutate(age_group = ifelse(age_group=='0-4'|age_group=='5-17'|age_group=='18-44', '0-44', age_group)) %>%
-  group_by(vaccinated, age_group, hosp, died) %>% count() %>% print(n=100)
-  
-
 
 df_death <- df %>%
   filter(age_group != "Unknown") %>%

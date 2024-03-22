@@ -23,7 +23,6 @@ The SARS-CoV-2 UShER phylogeny is available from [UShER](http://hgdownload.soe.u
 - `data` contains simulated clinical data containing all variables used in severity analysis to check code quality. It also contains a subset of the clinical data variables, which we have permission to share. This folder also contains mutation annotations from [Obermeyer et al](https://www.science.org/doi/full/10.1126/science.abm1208). Please access the GISAID sequences and SARS-CoV-2 UShER phylogeny using the above links.
 - `nextstrain_build` contains the identified clusters and the configurations for building the nextstrain trees to identify transmission clusters of gene knockouts in Washington State.
 - `envs` contains the conda config files for python code & notebooks and for matUtils.
-- `figs` contains the figures for the manuscript.
 - `notebooks` contains jupyter notebooks for plotting results and initial analyses.
 - `params` includes the SARS-CoV-2 reference genomes used in analyses & the config file for snakemake pipeline.
 - `usher` contains results from analyses using the usher phylogeny.
